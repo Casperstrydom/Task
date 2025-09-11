@@ -1,0 +1,46 @@
+{
+    "sourceFile": "frontend/src/main/Home.jsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 7,
+            "patches": [
+                {
+                    "date": 1757405730475,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757406397540,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,5 @@\n+import React from \"react\";\r\n+\r\n+export default function Home() {\r\n+  return <div>Home</div>;\r\n+}\r\n"
+                },
+                {
+                    "date": 1757417653402,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,10 @@\n import React from \"react\";\r\n+import homeComponent from \"../components/homeComponent\";\r\n \r\n export default function Home() {\r\n-  return <div>Home</div>;\r\n+  return (\r\n+    <div>\r\n+      <homeComponent />\r\n+    </div>\r\n+  );\r\n }\r\n"
+                },
+                {
+                    "date": 1757417679057,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,4 @@\n-import React from \"react\";\r\n import homeComponent from \"../components/homeComponent\";\r\n \r\n export default function Home() {\r\n   return (\r\n@@ -7,9 +6,4 @@\n       <homeComponent />\r\n     </div>\r\n   );\r\n }\r\n-import React from \"react\";\r\n-\r\n-export default function Home() {\r\n-  return <div>Home</div>;\r\n-}\r\n"
+                },
+                {
+                    "date": 1757417719759,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,9 @@\n+import HomeComponent from \"../components/homeComponent\";\r\n+\r\n+export default function Home() {\r\n+  return (\r\n+    <div>\r\n+      <HomeComponent />\r\n+    </div>\r\n+  );\r\n+}\r\n"
+                },
+                {
+                    "date": 1757417859957,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,4 +1,5 @@\n+import React from \"react\";\r\n import HomeComponent from \"../components/homeComponent\";\r\n \r\n export default function Home() {\r\n   return (\r\n"
+                },
+                {
+                    "date": 1757418171936,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,12 @@\n-import React from \"react\";\r\n+import { useState, useEffect} from \"react\";\r\n import HomeComponent from \"../components/homeComponent\";\r\n \r\n+//fetch data from backend and display it here\r\n+useEffect(() => {\r\n+  fetch(\"http://localhost:3000/api/data\")\r\n+    .then((response) => response.json())\r\n+\r\n export default function Home() {\r\n   return (\r\n     <div>\r\n       <HomeComponent />\r\n"
+                },
+                {
+                    "date": 1757418203031,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,7 @@\n-import { useState, useEffect} from \"react\";\r\n+import React from \"react\";\r\n import HomeComponent from \"../components/homeComponent\";\r\n \r\n-//fetch data from backend and display it here\r\n-useEffect(() => {\r\n-  fetch(\"http://localhost:3000/api/data\")\r\n-    .then((response) => response.json())\r\n-\r\n export default function Home() {\r\n   return (\r\n     <div>\r\n       <HomeComponent />\r\n"
+                }
+            ],
+            "date": 1757405730475,
+            "name": "Commit-0",
+            "content": "import React from \"react\";\r\n\r\nexport default function Home() {\r\n  return <div>Home</div>;\r\n}\r\n"
+        }
+    ]
+}

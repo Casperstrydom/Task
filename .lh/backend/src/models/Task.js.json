@@ -1,0 +1,18 @@
+{
+    "sourceFile": "backend/src/models/Task.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757315394992,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757315394992,
+            "name": "Commit-0",
+            "content": "const mongoose = require(\"mongoose\");\r\n\r\nconst TaskSchema = new mongoose.Schema(\r\n  {\r\n    title: { type: String, required: true, trim: true },\r\n    completed: { type: Boolean, default: false },\r\n  },\r\n  { timestamps: true }\r\n);\r\n\r\nmodule.exports = mongoose.model(\"Task\", TaskSchema);\r\n"
+        }
+    ]
+}
