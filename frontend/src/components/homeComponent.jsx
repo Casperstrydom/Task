@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import "../main/index.css";
 
+// Base URL for backend API
+const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
 function HomeComponent() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
@@ -9,7 +12,7 @@ function HomeComponent() {
   // Fetch tasks from backend
   useEffect(() => {
     axios
-      .get("http://localhost:5000/tasks")
+      .get(`${apiBase}/tasks`)
       .then((res) => setTasks(res.data))
       .catch((err) => console.error(err));
   }, []);
@@ -18,7 +21,7 @@ function HomeComponent() {
   const addTask = () => {
     if (!newTask.trim()) return;
     axios
-      .post("http://localhost:5000/tasks", { title: newTask })
+      .post(`${apiBase}/tasks`, { title: newTask })
       .then((res) => {
         setTasks([...tasks, res.data]);
         setNewTask("");
@@ -29,7 +32,7 @@ function HomeComponent() {
   // Delete task
   const deleteTask = (id) => {
     axios
-      .delete(`http://localhost:5000/tasks/${id}`)
+      .delete(`${apiBase}/tasks/${id}`)
       .then(() => {
         setTasks(tasks.filter((task) => task._id !== id));
       })
