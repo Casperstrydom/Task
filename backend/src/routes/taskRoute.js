@@ -1,5 +1,8 @@
 const express = require("express");
 const Task = require("../models/Task");
+const webpush = require("web-push");
+const { subscriptions } = require("../subscriptions"); // shared subscription store
+
 const router = express.Router();
 
 /**
@@ -9,15 +12,6 @@ const router = express.Router();
  *     summary: List all tasks
  *     tags:
  *       - Tasks
- *     responses:
- *       200:
- *         description: Array of tasks
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Task'
  */
 router.get("/", async (_req, res) => {
   const tasks = await Task.find().sort({ createdAt: -1 });
@@ -31,25 +25,6 @@ router.get("/", async (_req, res) => {
  *     summary: Create a new task
  *     tags:
  *       - Tasks
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *             properties:
- *               title:
- *                 type: string
- *                 example: "Buy groceries"
- *     responses:
- *       201:
- *         description: Task created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
  */
 router.post("/", async (req, res) => {
   const { title } = req.body;
@@ -57,6 +32,22 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "title is required" });
 
   const task = await Task.create({ title: title.trim() });
+
+  // ---- 🔔 Send Push Notification ----
+  const payload = JSON.stringify({
+    title: "New Task Created",
+    body: `Task: ${task.title}`,
+    icon: "/icon.png",
+  });
+
+  const sendPromises = subscriptions.map((sub) =>
+    webpush.sendNotification(sub, payload).catch((err) => {
+      console.error("Push error:", err);
+    })
+  );
+
+  await Promise.all(sendPromises);
+
   res.status(201).json(task);
 });
 
@@ -67,33 +58,6 @@ router.post("/", async (req, res) => {
  *     summary: Update a task
  *     tags:
  *       - Tasks
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Task ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               completed:
- *                 type: boolean
- *     responses:
- *       200:
- *         description: Task updated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
- *       404:
- *         description: Task not found
  */
 router.patch("/:id", async (req, res) => {
   const { id } = req.params;
@@ -115,18 +79,6 @@ router.patch("/:id", async (req, res) => {
  *     summary: Delete a task
  *     tags:
  *       - Tasks
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Task ID
- *     responses:
- *       204:
- *         description: Task deleted
- *       404:
- *         description: Task not found
  */
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
