@@ -6,123 +6,380 @@ html {
   background-color: #2c5364;
 }
 /* Futuristic Task Manager Styles */
+/* Futuristic Cyberpunk Theme */
 .futuristic-container {
+  position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-  color: #fff;
+  background: linear-gradient(135deg, #0a0a1a 0%, #0c0c2d 100%);
+  color: #e0e0e0;
   font-family: "Segoe UI", "Roboto", sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
   overflow: hidden;
 }
 
-.app-wrapper {
+/* Animated grid background */
+.cyber-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  max-width: 600px;
-  background: rgba(13, 25, 42, 0.6);
+  height: 100%;
+  background-image: linear-gradient(
+      rgba(0, 240, 255, 0.05) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Glowing orbs */
+.glowing-orbs {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.2;
+}
+
+.orb-1 {
+  width: 300px;
+  height: 300px;
+  background: rgba(0, 247, 255, 0.5);
+  top: 10%;
+  left: 10%;
+  animation: float 15s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 200px;
+  height: 200px;
+  background: rgba(187, 0, 255, 0.5);
+  top: 60%;
+  right: 10%;
+  animation: float 12s ease-in-out infinite reverse;
+}
+
+.orb-3 {
+  width: 250px;
+  height: 250px;
+  background: rgba(255, 0, 140, 0.5);
+  bottom: 10%;
+  left: 20%;
+  animation: float 18s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(20px, -20px) scale(1.05);
+  }
+}
+
+.app-wrapper {
+  display: flex;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+/* Sidebar Styles */
+.cyber-sidebar {
+  width: 280px;
+  background: rgba(10, 15, 35, 0.7);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 0 40px rgba(66, 220, 255, 0.2),
-    inset 0 0 20px rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(66, 220, 255, 0.3);
+  border-right: 1px solid rgba(0, 247, 255, 0.2);
+  padding: 20px;
+  box-shadow: 0 0 20px rgba(0, 247, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
 }
 
-.app-title {
-  text-align: center;
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 30px;
-  letter-spacing: 2px;
+.sidebar-header {
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(0, 247, 255, 0.3);
+}
+
+.neon-text {
+  color: #fff;
+  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00f7ff, 0 0 20px #00f7ff;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.cyber-search {
+  width: 100%;
+  padding: 12px 15px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 247, 255, 0.3);
+  border-radius: 2px;
+  color: #00f7ff;
+  font-family: monospace;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.cyber-search:focus {
+  box-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
+}
+
+.cyber-button {
+  position: relative;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 247, 255, 0.3);
+  color: #00f7ff;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: monospace;
   text-transform: uppercase;
-  background: linear-gradient(90deg, #42dcff, #ff00ff);
+  letter-spacing: 1px;
+}
+
+.cyber-button:hover {
+  background: rgba(0, 247, 255, 0.1);
+  box-shadow: 0 0 15px rgba(0, 247, 255, 0.4);
+}
+
+.cyber-button-glitch {
+  font-size: 16px;
+}
+
+.cyber-button-primary {
+  border-color: rgba(187, 0, 255, 0.3);
+  color: #bb00ff;
+}
+
+.cyber-button-primary:hover {
+  background: rgba(187, 0, 255, 0.1);
+  box-shadow: 0 0 15px rgba(187, 0, 255, 0.4);
+}
+
+.cyber-list-section {
+  margin-top: 10px;
+}
+
+.cyber-subtitle {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(0, 247, 255, 0.7);
+  margin-bottom: 15px;
+}
+
+.cyber-list {
+  list-style: none;
+  padding: 0;
+}
+
+.cyber-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 2px solid rgba(0, 247, 255, 0.5);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.cyber-list-item:hover {
+  background: rgba(0, 247, 255, 0.1);
+  transform: translateX(5px);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-indicator.online {
+  background: #00ff4c;
+  box-shadow: 0 0 5px #00ff4c;
+}
+
+.status-indicator.away {
+  background: #ffb300;
+  box-shadow: 0 0 5px #ffb300;
+}
+
+.channel-tag {
+  color: #00f7ff;
+  font-weight: bold;
+}
+
+/* Main Content Styles */
+.cyber-main {
+  flex: 1;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 247, 255, 0.2);
+}
+
+.cyber-title {
+  display: flex;
+  align-items: center;
+  font-size: 2.5rem;
+  color: transparent;
+  background: linear-gradient(45deg, #00f7ff, #bb00ff);
+  -webkit-background-clip: text;
   background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 10px rgba(66, 220, 255, 0.5);
+  text-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
+  letter-spacing: 2px;
 }
 
-.pulse {
-  animation: pulse 1.5s infinite;
+.cyber-title-cursor {
+  color: #00f7ff;
+  animation: blink 1s infinite;
 }
 
-@keyframes pulse {
-  0% {
+@keyframes blink {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
     opacity: 0;
   }
-  100% {
-    opacity: 1;
-  }
 }
 
-.input-section {
+.user-status {
   display: flex;
-  justify-content: center;
-  margin-bottom: 40px;
+  align-items: center;
 }
 
-.input-wrapper {
-  display: flex;
+.user-badge {
+  padding: 8px 15px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(187, 0, 255, 0.3);
+  color: #bb00ff;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Input Section */
+.cyber-input-section {
+  margin-bottom: 30px;
+}
+
+.cyber-input-wrapper {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 247, 255, 0.2);
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.cyber-input {
   width: 100%;
-  max-width: 500px;
-  position: relative;
-}
-
-.futuristic-input {
-  flex: 1;
-  padding: 15px 20px;
-  border: none;
-  border-radius: 12px 0 0 12px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 247, 255, 0.3);
+  color: #00f7ff;
   font-size: 16px;
+  margin-bottom: 15px;
   outline: none;
-  border: 1px solid rgba(66, 220, 255, 0.3);
-  border-right: none;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2),
-    0 0 15px rgba(66, 220, 255, 0.1);
-  transition: all 0.3s ease;
+  transition: all 0.3s;
+  font-family: monospace;
 }
 
-.futuristic-input:focus {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2),
-    0 0 20px rgba(66, 220, 255, 0.3);
+.cyber-input:focus {
+  box-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
 }
 
-.futuristic-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+.cyber-input::placeholder {
+  color: rgba(0, 247, 255, 0.5);
 }
 
-.futuristic-button {
-  padding: 15px 25px;
-  border: none;
-  border-radius: 0 12px 12px 0;
-  background: linear-gradient(90deg, #42dcff, #ff00ff);
-  color: white;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
+.datetime-inputs {
+  display: flex;
+  gap: 15px;
+  align-items: end;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.input-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(0, 247, 255, 0.7);
+  margin-bottom: 5px;
+}
+
+.cyber-date-input,
+.cyber-time-input {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 247, 255, 0.3);
+  color: #00f7ff;
+  outline: none;
+  font-family: monospace;
+}
+
+.cyber-date-input:focus,
+.cyber-time-input:focus {
+  box-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
+}
+
+.cyber-add-btn {
   position: relative;
+  padding: 12px 20px;
+  background: linear-gradient(45deg, #00a2ff, #bb00ff);
+  border: none;
+  color: white;
+  cursor: pointer;
   overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 15px rgba(66, 220, 255, 0.4);
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s;
 }
 
-.futuristic-button:hover {
+.cyber-add-btn:hover {
+  box-shadow: 0 0 15px rgba(187, 0, 255, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(66, 220, 255, 0.6);
 }
 
-.futuristic-button:active {
-  transform: translateY(0);
+.btn-hacker-text {
+  position: relative;
+  z-index: 1;
 }
 
-.button-overlay {
+.btn-overlay {
   position: absolute;
   top: 0;
   left: -100%;
@@ -134,82 +391,173 @@ html {
     rgba(255, 255, 255, 0.2),
     transparent
   );
-  transition: all 0.6s ease;
+  transition: all 0.6s;
 }
 
-.futuristic-button:hover .button-overlay {
+.cyber-add-btn:hover .btn-overlay {
   left: 100%;
 }
 
-.tasks-container {
-  width: 100%;
+/* Task List Styles */
+.cyber-tasks-container {
+  flex: 1;
 }
 
-.task-list {
+.cyber-task-list {
   list-style: none;
   padding: 0;
-  margin: 0;
 }
 
-.task-item {
+.cyber-task-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  margin-bottom: 15px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  border: 1px solid rgba(66, 220, 255, 0.2);
+  margin-bottom: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid #00f7ff;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
-  animation: taskAppear 0.4s ease-out;
+  transition: all 0.3s;
 }
 
-@keyframes taskAppear {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.cyber-task-item:hover {
+  background: rgba(0, 247, 255, 0.1);
+  transform: translateX(5px);
 }
 
-.task-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.cyber-glow-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #00f7ff, transparent);
+  opacity: 0.5;
+}
+
+.task-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+.task-checkbox {
+  position: relative;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+}
+
+.cyber-checkbox {
+  opacity: 0;
+  position: absolute;
+  cursor: pointer;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 20px;
+  width: 20px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 247, 255, 0.5);
+  transition: all 0.3s;
+}
+
+.cyber-checkbox:checked ~ .checkmark {
+  background-color: #00f7ff;
+  box-shadow: 0 0 10px #00f7ff;
+}
+
+.cyber-checkbox:checked ~ .checkmark:after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid black;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .task-text {
-  font-size: 16px;
-  letter-spacing: 0.5px;
+  flex: 1;
 }
 
-.glow-bar {
-  width: 6px;
-  height: 100%;
-  background: linear-gradient(to bottom, #42dcff, #ff00ff);
+.task-date {
+  font-size: 12px;
+  color: rgba(0, 247, 255, 0.7);
+  font-family: monospace;
+}
+
+.task-actions {
+  display: flex;
+  align-items: center;
+}
+
+.cyber-delete-btn {
+  position: relative;
+  background: rgba(255, 0, 0, 0.2);
+  border: 1px solid rgba(255, 0, 0, 0.5);
+  color: #ff0066;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.cyber-delete-btn:hover {
+  background: rgba(255, 0, 0, 0.3);
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+.cyber-delete-btn .tooltip {
   position: absolute;
-  right: 0;
-  top: 0;
-  border-radius: 0 10px 10px 0;
-  opacity: 0.7;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 2px;
+  font-size: 12px;
+  opacity: 0;
+  transition: all 0.3s;
+  white-space: nowrap;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: rgba(255, 255, 255, 0.6);
+.cyber-delete-btn:hover .tooltip {
+  opacity: 1;
+  bottom: -25px;
+}
+
+/* Empty State */
+.cyber-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(0, 247, 255, 0.3);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
 }
 
 .hologram-icon {
   font-size: 60px;
+  color: rgba(0, 247, 255, 0.5);
   margin-bottom: 20px;
-  opacity: 0.7;
-  animation: rotate 8s linear infinite;
+  animation: rotate 10s linear infinite;
 }
 
 @keyframes rotate {
@@ -221,27 +569,558 @@ html {
   }
 }
 
-/* Responsive design */
+.cyber-empty-state p {
+  color: rgba(0, 247, 255, 0.7);
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.scan-line {
+  position: absolute;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, #00f7ff, transparent);
+  animation: scan 3s linear infinite;
+}
+
+@keyframes scan {
+  0% {
+    top: 0;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.pulse {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .app-wrapper {
-    padding: 20px;
-  }
-
-  .app-title {
-    font-size: 2rem;
-  }
-
-  .input-wrapper {
     flex-direction: column;
   }
 
-  .futuristic-input {
-    border-radius: 12px;
-    border-right: 1px solid rgba(66, 220, 255, 0.3);
-    margin-bottom: 10px;
+  .cyber-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 247, 255, 0.2);
   }
 
-  .futuristic-button {
-    border-radius: 12px;
+  .datetime-inputs {
+    flex-direction: column;
+  }
+}
+
+/* Scroll containers */
+.scroll-container {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 10px 0;
+}
+
+/* Custom scrollbar for cyberpunk theme */
+.scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 247, 255, 0.5);
+  border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 247, 255, 0.7);
+}
+
+/* Section header with toggle */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.toggle-button {
+  background: none;
+  border: none;
+  color: #00f7ff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+}
+
+.toggle-button:hover {
+  color: #bb00ff;
+}
+
+/* Friend action buttons */
+.add-friend-btn,
+.remove-friend-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 247, 255, 0.3);
+  color: #00f7ff;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.add-friend-btn:hover {
+  background: rgba(0, 247, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.remove-friend-btn {
+  border-color: rgba(255, 0, 100, 0.3);
+  color: #ff0064;
+}
+
+.remove-friend-btn:hover {
+  background: rgba(255, 0, 100, 0.2);
+  transform: scale(1.1);
+}
+
+/* Empty state for lists */
+.cyber-list-item.empty {
+  justify-content: center;
+  color: rgba(0, 247, 255, 0.5);
+  font-style: italic;
+}
+
+/* Adjust task container height */
+.cyber-tasks-container.scroll-container {
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+}
+
+/* Status indicators */
+.status-indicator.offline {
+  background: #666;
+  box-shadow: 0 0 5px #666;
+}
+
+.status-indicator.away {
+  background: #ffb300;
+  box-shadow: 0 0 5px #ffb300;
+}
+
+.status-indicator.busy {
+  background: #ff0064;
+  box-shadow: 0 0 5px #ff0064;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .scroll-container {
+    max-height: 150px;
+  }
+
+  .cyber-tasks-container.scroll-container {
+    max-height: calc(100vh - 300px);
+  }
+}
+
+/* Auth Specific Styles */
+.futuristic-auth-container {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a1a 0%, #0c0c2d 100%);
+  color: #e0e0e0;
+  font-family: "Segoe UI", "Roboto", sans-serif;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Animated grid background */
+.cyber-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(
+      rgba(0, 240, 255, 0.05) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Glowing orbs */
+.glowing-orbs {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.2;
+}
+
+.orb-1 {
+  width: 300px;
+  height: 300px;
+  background: rgba(0, 247, 255, 0.5);
+  top: 10%;
+  left: 10%;
+  animation: float 15s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 200px;
+  height: 200px;
+  background: rgba(187, 0, 255, 0.5);
+  top: 60%;
+  right: 10%;
+  animation: float 12s ease-in-out infinite reverse;
+}
+
+.orb-3 {
+  width: 250px;
+  height: 250px;
+  background: rgba(255, 0, 140, 0.5);
+  bottom: 10%;
+  left: 20%;
+  animation: float 18s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(20px, -20px) scale(1.05);
+  }
+}
+
+.auth-wrapper {
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  z-index: 2;
+}
+
+.auth-card {
+  background: rgba(10, 15, 35, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 247, 255, 0.2);
+  border-radius: 4px;
+  padding: 30px;
+  box-shadow: 0 0 30px rgba(0, 247, 255, 0.1);
+  overflow: hidden;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.cyber-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: transparent;
+  background: linear-gradient(45deg, #00f7ff, #bb00ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.cyber-title-cursor {
+  color: #00f7ff;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.auth-subtitle {
+  color: rgba(0, 247, 255, 0.7);
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.cyber-form {
+  width: 100%;
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 25px;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.form-header h2 {
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.neon-text {
+  color: #fff;
+  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00f7ff, 0 0 20px #00f7ff;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.form-indicator {
+  height: 2px;
+  width: 50px;
+  background: linear-gradient(90deg, transparent, #00f7ff, transparent);
+  margin: 0 auto;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(0, 247, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.cyber-input {
+  width: 100%;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 247, 255, 0.3);
+  color: #00f7ff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+  font-family: monospace;
+  box-sizing: border-box;
+  border-radius: 2px;
+}
+
+.cyber-input:focus {
+  box-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
+  border-color: #00f7ff;
+}
+
+.cyber-input::placeholder {
+  color: rgba(0, 247, 255, 0.5);
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.cyber-checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(0, 247, 255, 0.7);
+}
+
+.cyber-checkbox-container input {
+  opacity: 0;
+  position: absolute;
+}
+
+.cyber-checkbox-container .checkmark {
+  width: 16px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 247, 255, 0.5);
+  margin-right: 8px;
+  position: relative;
+  transition: all 0.3s;
+  border-radius: 2px;
+}
+
+.cyber-checkbox-container input:checked ~ .checkmark {
+  background-color: #00f7ff;
+  box-shadow: 0 0 10px #00f7ff;
+}
+
+.cyber-checkbox-container input:checked ~ .checkmark:after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid black;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.cyber-link {
+  color: #bb00ff;
+  text-decoration: none;
+  font-size: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-shadow: 0 0 5px rgba(187, 0, 255, 0.5);
+  transition: all 0.3s;
+}
+
+.cyber-link:hover {
+  color: #ff00aa;
+  text-shadow: 0 0 10px rgba(255, 0, 170, 0.7);
+}
+
+.cyber-button {
+  position: relative;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 247, 255, 0.3);
+  color: #00f7ff;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 2px;
+}
+
+.cyber-button:hover {
+  background: rgba(0, 247, 255, 0.1);
+  box-shadow: 0 0 15px rgba(0, 247, 255, 0.4);
+}
+
+.cyber-button-primary {
+  background: linear-gradient(45deg, #00a2ff, #bb00ff);
+  border: none;
+  color: white;
+}
+
+.cyber-button-primary:hover {
+  box-shadow: 0 0 15px rgba(187, 0, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.cyber-button-glitch {
+  font-size: 16px;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: 14px;
+  color: rgba(0, 247, 255, 0.7);
+  margin-top: 20px;
+}
+
+.auth-switch span {
+  margin-right: 10px;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 10px;
+  color: rgba(0, 247, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: monospace;
+}
+
+.pulse {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive adjustments for auth forms */
+@media (max-width: 480px) {
+  .auth-wrapper {
+    padding: 10px;
+  }
+
+  .auth-card {
+    padding: 20px;
+  }
+
+  .form-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .cyber-link {
+    margin-top: 5px;
+  }
+
+  .cyber-title {
+    font-size: 1.5rem;
   }
 }
