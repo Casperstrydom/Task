@@ -14,42 +14,93 @@ function HomeComponent() {
   const [allUsers, setAllUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [showAddFriends, setShowAddFriends] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    name: "USER_01",
+    email: "user01@nexus.com",
+    joined: "2023-11-15",
+  });
 
-  // Fetch tasks from backend
+  // ============ PUSH NOTIFICATIONS ============
+  useEffect(() => {
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then(async (reg) => {
+          console.log("✅ Service Worker registered:", reg);
+
+          // Get vapidPublicKey from backend
+          const { data } = await axios.get(`${apiBase}/vapidPublicKey`);
+          const vapidKey = urlBase64ToUint8Array(data.publicKey);
+
+          // Ask user permission
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            console.warn("🚫 Push notifications permission denied");
+            return;
+          }
+
+          // Subscribe user
+          const subscription = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: vapidKey,
+          });
+
+          console.log("📡 Push Subscription:", subscription);
+
+          // Send subscription to backend
+          await axios.post(`${apiBase}/subscribe`, subscription);
+        })
+        .catch((err) => console.error("❌ SW registration failed:", err));
+    }
+  }, []);
+
+  // Helper: convert VAPID key
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  // ============ DATA FETCH ============
   useEffect(() => {
     axios
       .get(`${apiBase}/tasks`)
       .then((res) => setTasks(res.data))
-      .catch((err) => console.error(err));
-
-    // Fetch friends
+      .catch(console.error);
     axios
       .get(`${apiBase}/friends`)
       .then((res) => setFriends(res.data))
-      .catch((err) => console.error("Error fetching friends:", err));
-
-    // Fetch all users (for adding friends)
+      .catch(console.error);
     axios
       .get(`${apiBase}/users`)
       .then((res) => setAllUsers(res.data))
-      .catch((err) => console.error("Error fetching users:", err));
-
-    // Fetch groups
+      .catch(console.error);
     axios
       .get(`${apiBase}/groups`)
       .then((res) => setGroups(res.data))
-      .catch((err) => console.error("Error fetching groups:", err));
+      .catch(console.error);
+    axios
+      .get(`${apiBase}/user/me`)
+      .then((res) => setCurrentUser(res.data))
+      .catch(console.error);
   }, []);
 
-  // Add new task
+  // ============ TASKS ============
   const addTask = () => {
     if (!newTask.trim()) return;
-
     const taskData = {
       title: newTask,
       dueDate: dueDate && dueTime ? new Date(`${dueDate}T${dueTime}`) : null,
     };
-
     axios
       .post(`${apiBase}/tasks`, taskData)
       .then((res) => {
@@ -58,68 +109,57 @@ function HomeComponent() {
         setDueDate("");
         setDueTime("");
       })
-      .catch((err) => console.error(err));
+      .catch(console.error);
   };
 
-  // Delete task
   const deleteTask = (id) => {
     axios
       .delete(`${apiBase}/tasks/${id}`)
-      .then(() => {
-        setTasks(tasks.filter((task) => task._id !== id));
-      })
-      .catch((err) => console.error(err));
+      .then(() => setTasks(tasks.filter((t) => t._id !== id)))
+      .catch(console.error);
   };
 
-  // Add friend
+  // ============ FRIENDS ============
   const addFriend = (userId) => {
     axios
       .post(`${apiBase}/friends`, { friendId: userId })
       .then((res) => {
         setFriends([...friends, res.data]);
-        // Remove from allUsers to avoid duplicate adding
-        setAllUsers(allUsers.filter((user) => user._id !== userId));
+        setAllUsers(allUsers.filter((u) => u._id !== userId));
       })
-      .catch((err) => console.error("Error adding friend:", err));
+      .catch(console.error);
   };
 
-  // Remove friend
   const removeFriend = (friendId) => {
     axios
       .delete(`${apiBase}/friends/${friendId}`)
-      .then(() => {
-        setFriends(friends.filter((friend) => friend._id !== friendId));
-      })
-      .catch((err) => console.error("Error removing friend:", err));
+      .then(() => setFriends(friends.filter((f) => f._id !== friendId)))
+      .catch(console.error);
   };
 
-  // Create group
+  // ============ GROUPS ============
   const createGroup = () => {
     const groupName = prompt("Enter group name:");
     if (groupName) {
       axios
         .post(`${apiBase}/groups`, { name: groupName })
-        .then((res) => {
-          setGroups([...groups, res.data]);
-        })
-        .catch((err) => console.error("Error creating group:", err));
+        .then((res) => setGroups([...groups, res.data]))
+        .catch(console.error);
     }
   };
 
-  // Handle Enter key press
+  // ============ INPUT HANDLER ============
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      addTask();
-    }
+    if (e.key === "Enter") addTask();
   };
 
-  // Filter out users who are already friends
   const availableUsers = allUsers.filter(
     (user) =>
       !friends.some((friend) => friend._id === user._id) &&
-      user._id !== "current-user-id" // Replace with actual current user ID logic
+      user._id !== "current-user-id"
   );
 
+  // ============ RENDER ============
   return (
     <main className="futuristic-container">
       {/* Animated background elements */}
@@ -135,108 +175,175 @@ function HomeComponent() {
         <aside className="cyber-sidebar">
           <div className="sidebar-header">
             <h2 className="neon-text">CONNECTIONS</h2>
-          </div>
-
-          <input
-            type="text"
-            placeholder="Search users..."
-            className="cyber-search"
-          />
-
-          <button
-            className="cyber-button cyber-button-primary"
-            onClick={createGroup}
-          >
-            <span className="cyber-button-glitch">➕</span>
-            <span className="cyber-button-text">CREATE GROUP</span>
-          </button>
-
-          {/* Add Friends Section */}
-          <div className="cyber-list-section">
-            <div className="section-header">
-              <h3 className="cyber-subtitle">ADD FRIENDS</h3>
-              <button
-                className="toggle-button"
-                onClick={() => setShowAddFriends(!showAddFriends)}
-              >
-                {showAddFriends ? "▲" : "▼"}
-              </button>
-            </div>
-            {showAddFriends && (
-              <div className="scroll-container">
-                <ul className="cyber-list">
-                  {availableUsers.length > 0 ? (
-                    availableUsers.map((user) => (
-                      <li key={user._id} className="cyber-list-item">
-                        <span className="status-indicator offline"></span>
-                        <span>{user.name}</span>
-                        <button
-                          onClick={() => addFriend(user._id)}
-                          className="add-friend-btn"
-                          title="Add Friend"
-                        >
-                          +
-                        </button>
-                      </li>
-                    ))
-                  ) : (
-                    <li className="cyber-list-item empty">
-                      <span>No users available to add</span>
-                    </li>
-                  )}
-                </ul>
+            <button
+              className="user-profile-button"
+              onClick={() => setShowUserProfile(true)}
+              title="View Profile"
+            >
+              <div className="user-avatar">
+                <span className="avatar-icon">👤</span>
               </div>
-            )}
+            </button>
           </div>
 
-          {/* Friends Network Section */}
-          <div className="cyber-list-section">
-            <h3 className="cyber-subtitle">FRIENDS NETWORK</h3>
-            <div className="scroll-container">
-              <ul className="cyber-list">
-                {friends.length > 0 ? (
-                  friends.map((friend) => (
-                    <li key={friend._id} className="cyber-list-item">
-                      <span className="status-indicator online"></span>
-                      <span>{friend.name}</span>
-                      <button
-                        onClick={() => removeFriend(friend._id)}
-                        className="remove-friend-btn"
-                        title="Remove Friend"
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))
-                ) : (
-                  <li className="cyber-list-item empty">
-                    <span>No friends yet</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-          </div>
+          {showUserProfile ? (
+            /* User Profile View */
+            <div className="user-profile-view">
+              <div className="profile-header">
+                <button
+                  className="back-button"
+                  onClick={() => setShowUserProfile(false)}
+                >
+                  ← BACK
+                </button>
+              </div>
 
-          {/* Group Channels Section */}
-          <div className="cyber-list-section">
-            <h3 className="cyber-subtitle">GROUP CHANNELS</h3>
-            <div className="scroll-container">
-              <ul className="cyber-list">
-                {groups.length > 0 ? (
-                  groups.map((group) => (
-                    <li key={group._id} className="cyber-list-item">
-                      <span className="channel-tag">#</span>
-                      <span>{group.name}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="cyber-list-item empty">
-                    <span>No groups yet</span>
-                  </li>
-                )}
-              </ul>
+              <div className="profile-content">
+                <div className="profile-avatar-large">
+                  <span className="avatar-icon-large">👤</span>
+                </div>
+
+                <div className="profile-details">
+                  <h3 className="profile-name">{currentUser.name}</h3>
+                  <p className="profile-email">{currentUser.email}</p>
+                  <p className="profile-joined">
+                    Member since:{" "}
+                    {new Date(currentUser.joined).toLocaleDateString()}
+                  </p>
+                </div>
+
+                <div className="profile-stats">
+                  <div className="stat-item">
+                    <span className="stat-number">{friends.length}</span>
+                    <span className="stat-label">FRIENDS</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{groups.length}</span>
+                    <span className="stat-label">GROUPS</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{tasks.length}</span>
+                    <span className="stat-label">TASKS</span>
+                  </div>
+                </div>
+
+                <button className="cyber-button cyber-button-primary full-width">
+                  <span className="cyber-button-text">EDIT PROFILE</span>
+                </button>
+
+                <button
+                  className="cyber-button logout-button"
+                  onClick={() => (window.location.href = "/login")}
+                >
+                  <span className="cyber-button-text">LOGOUT</span>
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Normal Sidebar Content */
+            <>
+              <input
+                type="text"
+                placeholder="Search users..."
+                className="cyber-search"
+              />
+
+              <button
+                className="cyber-button cyber-button-primary"
+                onClick={createGroup}
+              >
+                <span className="cyber-button-glitch">➕</span>
+                <span className="cyber-button-text">CREATE GROUP</span>
+              </button>
+
+              {/* Add Friends Section */}
+              <div className="cyber-list-section">
+                <div className="section-header">
+                  <h3 className="cyber-subtitle">ADD FRIENDS</h3>
+                  <button
+                    className="toggle-button"
+                    onClick={() => setShowAddFriends(!showAddFriends)}
+                  >
+                    {showAddFriends ? "▲" : "▼"}
+                  </button>
+                </div>
+                {showAddFriends && (
+                  <div className="scroll-container">
+                    <ul className="cyber-list">
+                      {availableUsers.length > 0 ? (
+                        availableUsers.map((user) => (
+                          <li key={user._id} className="cyber-list-item">
+                            <span className="status-indicator offline"></span>
+                            <span>{user.name}</span>
+                            <button
+                              onClick={() => addFriend(user._id)}
+                              className="add-friend-btn"
+                              title="Add Friend"
+                            >
+                              +
+                            </button>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="cyber-list-item empty">
+                          <span>No users available to add</span>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Friends Network Section */}
+              <div className="cyber-list-section">
+                <h3 className="cyber-subtitle">FRIENDS NETWORK</h3>
+                <div className="scroll-container">
+                  <ul className="cyber-list">
+                    {friends.length > 0 ? (
+                      friends.map((friend) => (
+                        <li key={friend._id} className="cyber-list-item">
+                          <span className="status-indicator online"></span>
+                          <span>{friend.name}</span>
+                          <button
+                            onClick={() => removeFriend(friend._id)}
+                            className="remove-friend-btn"
+                            title="Remove Friend"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="cyber-list-item empty">
+                        <span>No friends yet</span>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Group Channels Section */}
+              <div className="cyber-list-section">
+                <h3 className="cyber-subtitle">GROUP CHANNELS</h3>
+                <div className="scroll-container">
+                  <ul className="cyber-list">
+                    {groups.length > 0 ? (
+                      groups.map((group) => (
+                        <li key={group._id} className="cyber-list-item">
+                          <span className="channel-tag">#</span>
+                          <span>{group.name}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="cyber-list-item empty">
+                        <span>No groups yet</span>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
         </aside>
 
         {/* Main Task Area */}
@@ -247,7 +354,7 @@ function HomeComponent() {
               <span className="cyber-title-cursor pulse">_</span>
             </h1>
             <div className="user-status">
-              <span className="user-badge">USER_01</span>
+              <span className="user-badge">{currentUser.name}</span>
             </div>
           </div>
 

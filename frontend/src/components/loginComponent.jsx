@@ -1,25 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../main/index.css";
 
-const Login = ({ onLogin, switchToRegister }) => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+const Login = ({ onLogin, switchToRegister, apiBase }) => {
+  const [formData, setFormData] = useState({ email: "", password: "" });
+
+  // Ask permission for notifications on login page load
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission().then((permission) => {
+        console.log("Notification permission:", permission);
+      });
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     onLogin(formData);
+
+    // Register service worker and subscribe for push notifications
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js");
+
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+          // Fetch VAPID public key from backend
+          const res = await fetch(`${apiBase}/vapidPublicKey`);
+          const vapidPublicKey = await res.text();
+          const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: convertedKey,
+          });
+        }
+
+        // Send subscription to backend
+        await fetch(`${apiBase}/subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(subscription),
+        });
+
+        console.log("Push subscription successful");
+      } catch (err) {
+        console.error("Push subscription failed:", err);
+      }
+    }
   };
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+  }
 
   return (
     <div className="futuristic-auth-container">
-      {/* Animated background elements */}
       <div className="cyber-grid"></div>
       <div className="glowing-orbs">
         <div className="orb orb-1"></div>
