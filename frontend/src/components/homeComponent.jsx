@@ -21,86 +21,47 @@ function HomeComponent() {
     joined: "2023-11-15",
   });
 
-  // ============ PUSH NOTIFICATIONS ============
-  useEffect(() => {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then(async (reg) => {
-          console.log("✅ Service Worker registered:", reg);
-
-          // Get vapidPublicKey from backend
-          const { data } = await axios.get(`${apiBase}/vapidPublicKey`);
-          const vapidKey = urlBase64ToUint8Array(data.publicKey);
-
-          // Ask user permission
-          const permission = await Notification.requestPermission();
-          if (permission !== "granted") {
-            console.warn("🚫 Push notifications permission denied");
-            return;
-          }
-
-          // Subscribe user
-          const subscription = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: vapidKey,
-          });
-
-          console.log("📡 Push Subscription:", subscription);
-
-          // Send subscription to backend
-          await axios.post(`${apiBase}/subscribe`, subscription);
-        })
-        .catch((err) => console.error("❌ SW registration failed:", err));
-    }
-  }, []);
-
-  // Helper: convert VAPID key
-  const urlBase64ToUint8Array = (base64String) => {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  };
-
-  // ============ DATA FETCH ============
+  // Fetch tasks from backend
   useEffect(() => {
     axios
       .get(`${apiBase}/tasks`)
       .then((res) => setTasks(res.data))
-      .catch(console.error);
+      .catch((err) => console.error(err));
+
+    // Fetch friends
     axios
       .get(`${apiBase}/friends`)
       .then((res) => setFriends(res.data))
-      .catch(console.error);
+      .catch((err) => console.error("Error fetching friends:", err));
+
+    // Fetch all users (for adding friends)
     axios
       .get(`${apiBase}/users`)
       .then((res) => setAllUsers(res.data))
-      .catch(console.error);
+      .catch((err) => console.error("Error fetching users:", err));
+
+    // Fetch groups
     axios
       .get(`${apiBase}/groups`)
       .then((res) => setGroups(res.data))
-      .catch(console.error);
+      .catch((err) => console.error("Error fetching groups:", err));
+
+    // Fetch current user data
     axios
       .get(`${apiBase}/user/me`)
       .then((res) => setCurrentUser(res.data))
-      .catch(console.error);
+      .catch((err) => console.error("Error fetching user data:", err));
   }, []);
 
-  // ============ TASKS ============
+  // Add new task
   const addTask = () => {
     if (!newTask.trim()) return;
+
     const taskData = {
       title: newTask,
       dueDate: dueDate && dueTime ? new Date(`${dueDate}T${dueTime}`) : null,
     };
+
     axios
       .post(`${apiBase}/tasks`, taskData)
       .then((res) => {
@@ -109,57 +70,68 @@ function HomeComponent() {
         setDueDate("");
         setDueTime("");
       })
-      .catch(console.error);
+      .catch((err) => console.error(err));
   };
 
+  // Delete task
   const deleteTask = (id) => {
     axios
       .delete(`${apiBase}/tasks/${id}`)
-      .then(() => setTasks(tasks.filter((t) => t._id !== id)))
-      .catch(console.error);
+      .then(() => {
+        setTasks(tasks.filter((task) => task._id !== id));
+      })
+      .catch((err) => console.error(err));
   };
 
-  // ============ FRIENDS ============
+  // Add friend
   const addFriend = (userId) => {
     axios
       .post(`${apiBase}/friends`, { friendId: userId })
       .then((res) => {
         setFriends([...friends, res.data]);
-        setAllUsers(allUsers.filter((u) => u._id !== userId));
+        // Remove from allUsers to avoid duplicate adding
+        setAllUsers(allUsers.filter((user) => user._id !== userId));
       })
-      .catch(console.error);
+      .catch((err) => console.error("Error adding friend:", err));
   };
 
+  // Remove friend
   const removeFriend = (friendId) => {
     axios
       .delete(`${apiBase}/friends/${friendId}`)
-      .then(() => setFriends(friends.filter((f) => f._id !== friendId)))
-      .catch(console.error);
+      .then(() => {
+        setFriends(friends.filter((friend) => friend._id !== friendId));
+      })
+      .catch((err) => console.error("Error removing friend:", err));
   };
 
-  // ============ GROUPS ============
+  // Create group
   const createGroup = () => {
     const groupName = prompt("Enter group name:");
     if (groupName) {
       axios
         .post(`${apiBase}/groups`, { name: groupName })
-        .then((res) => setGroups([...groups, res.data]))
-        .catch(console.error);
+        .then((res) => {
+          setGroups([...groups, res.data]);
+        })
+        .catch((err) => console.error("Error creating group:", err));
     }
   };
 
-  // ============ INPUT HANDLER ============
+  // Handle Enter key press
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") addTask();
+    if (e.key === "Enter") {
+      addTask();
+    }
   };
 
+  // Filter out users who are already friends
   const availableUsers = allUsers.filter(
     (user) =>
       !friends.some((friend) => friend._id === user._id) &&
       user._id !== "current-user-id"
   );
 
-  // ============ RENDER ============
   return (
     <main className="futuristic-container">
       {/* Animated background elements */}

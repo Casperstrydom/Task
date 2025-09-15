@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "../main/index.css";
 
-const Login = ({ onLogin, switchToRegister, apiBase }) => {
+const Login = ({ onLogin, switchToRegister }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   // Ask permission for notifications on login page load
@@ -29,9 +29,8 @@ const Login = ({ onLogin, switchToRegister, apiBase }) => {
 
         let subscription = await registration.pushManager.getSubscription();
         if (!subscription) {
-          // Fetch VAPID public key from backend
-          const res = await fetch(`${apiBase}/vapidPublicKey`);
-          const vapidPublicKey = await res.text();
+          // Use VAPID public key from frontend .env
+          const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
           const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
 
           subscription = await registration.pushManager.subscribe({
@@ -41,6 +40,7 @@ const Login = ({ onLogin, switchToRegister, apiBase }) => {
         }
 
         // Send subscription to backend
+        const apiBase = import.meta.env.VITE_API_BASE;
         await fetch(`${apiBase}/subscribe`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
