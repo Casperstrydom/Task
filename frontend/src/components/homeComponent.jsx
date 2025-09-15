@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import "../main/index.css";
 
@@ -12,56 +12,74 @@ function HomeComponent() {
   const [dueTime, setDueTime] = useState("");
   const [friends, setFriends] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
-  const [groups, setGroups] = useState([]);
-  const [showAddFriends, setShowAddFriends] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [currentUser, setCurrentUser] = useState({
-    name: "USER_01",
-    email: "user01@nexus.com",
-    joined: "2023-11-15",
+    _id: null,
+    name: "",
+    email: "",
+    joined: "",
   });
 
-  // Fetch tasks from backend
-  useEffect(() => {
+  const [incomingRequests, setIncomingRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
+  const [notification, setNotification] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
+
+  // Fetch friend requests
+  const fetchFriendRequests = useCallback(() => {
+    axios
+      .get(`${apiBase}/friend-requests/incoming`)
+      .then((res) => setIncomingRequests(res.data))
+      .catch(console.error);
+
+    axios
+      .get(`${apiBase}/friend-requests/sent`)
+      .then((res) => setSentRequests(res.data))
+      .catch(console.error);
+  }, []);
+
+  // Fetch initial data
+  const fetchData = useCallback(() => {
     axios
       .get(`${apiBase}/tasks`)
       .then((res) => setTasks(res.data))
-      .catch((err) => console.error(err));
+      .catch(console.error);
 
-    // Fetch friends
     axios
       .get(`${apiBase}/friends`)
       .then((res) => setFriends(res.data))
-      .catch((err) => console.error("Error fetching friends:", err));
+      .catch(console.error);
 
-    // Fetch all users (for adding friends)
     axios
       .get(`${apiBase}/users`)
       .then((res) => setAllUsers(res.data))
-      .catch((err) => console.error("Error fetching users:", err));
+      .catch(console.error);
 
-    // Fetch groups
-    axios
-      .get(`${apiBase}/groups`)
-      .then((res) => setGroups(res.data))
-      .catch((err) => console.error("Error fetching groups:", err));
-
-    // Fetch current user data
     axios
       .get(`${apiBase}/user/me`)
       .then((res) => setCurrentUser(res.data))
-      .catch((err) => console.error("Error fetching user data:", err));
-  }, []);
+      .catch(console.error);
+
+    fetchFriendRequests();
+  }, [fetchFriendRequests]);
+
+  useEffect(() => {
+    fetchData();
+
+    const interval = setInterval(() => {
+      fetchFriendRequests();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchData, fetchFriendRequests]);
 
   // Add new task
   const addTask = () => {
     if (!newTask.trim()) return;
-
     const taskData = {
       title: newTask,
-      dueDate: dueDate && dueTime ? new Date(`${dueDate}T${dueTime}`) : null,
+      dueDate: dueDate && dueTime ? `${dueDate}T${dueTime}:00.000Z` : null,
     };
-
     axios
       .post(`${apiBase}/tasks`, taskData)
       .then((res) => {
@@ -70,71 +88,89 @@ function HomeComponent() {
         setDueDate("");
         setDueTime("");
       })
-      .catch((err) => console.error(err));
+      .catch(console.error);
   };
 
   // Delete task
   const deleteTask = (id) => {
     axios
       .delete(`${apiBase}/tasks/${id}`)
-      .then(() => {
-        setTasks(tasks.filter((task) => task._id !== id));
-      })
-      .catch((err) => console.error(err));
+      .then(() => setTasks(tasks.filter((task) => task._id !== id)))
+      .catch(console.error);
   };
 
-  // Add friend
-  const addFriend = (userId) => {
+  // Friend request actions
+  const sendFriendRequest = (userId, userName) => {
     axios
-      .post(`${apiBase}/friends`, { friendId: userId })
-      .then((res) => {
-        setFriends([...friends, res.data]);
-        // Remove from allUsers to avoid duplicate adding
-        setAllUsers(allUsers.filter((user) => user._id !== userId));
+      .post(`${apiBase}/friend-requests`, { toUserId: userId })
+      .then(() => {
+        setSentRequests((prev) => [...prev, userId]);
+        showTempNotification(`Friend request sent to ${userName}`);
       })
-      .catch((err) => console.error("Error adding friend:", err));
+      .catch(console.error);
   };
 
-  // Remove friend
-  const removeFriend = (friendId) => {
+  const acceptFriendRequest = (requestId, fromUser) => {
+    axios
+      .post(`${apiBase}/friend-requests/accept`, { requestId })
+      .then(() => {
+        setFriends([...friends, fromUser]);
+        setIncomingRequests(
+          incomingRequests.filter((r) => r._id !== requestId)
+        );
+        showTempNotification(`${fromUser.name} is now your friend!`);
+        fetchData();
+      })
+      .catch(console.error);
+  };
+
+  const declineFriendRequest = (requestId, fromUserName) => {
+    axios
+      .post(`${apiBase}/friend-requests/decline`, { requestId })
+      .then(() => {
+        setIncomingRequests(
+          incomingRequests.filter((r) => r._id !== requestId)
+        );
+        showTempNotification(`Declined friend request from ${fromUserName}`);
+      })
+      .catch(console.error);
+  };
+
+  const removeFriend = (friendId, friendName) => {
     axios
       .delete(`${apiBase}/friends/${friendId}`)
       .then(() => {
-        setFriends(friends.filter((friend) => friend._id !== friendId));
+        setFriends(friends.filter((f) => f._id !== friendId));
+        showTempNotification(`Removed ${friendName} from friends`);
       })
-      .catch((err) => console.error("Error removing friend:", err));
+      .catch(console.error);
   };
 
-  // Create group
-  const createGroup = () => {
-    const groupName = prompt("Enter group name:");
-    if (groupName) {
-      axios
-        .post(`${apiBase}/groups`, { name: groupName })
-        .then((res) => {
-          setGroups([...groups, res.data]);
-        })
-        .catch((err) => console.error("Error creating group:", err));
-    }
+  // Notifications
+  const showTempNotification = (message) => {
+    setNotification(message);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
   };
 
-  // Handle Enter key press
+  // Input handler
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      addTask();
-    }
+    if (e.key === "Enter") addTask();
   };
 
-  // Filter out users who are already friends
+  // Filters
   const availableUsers = allUsers.filter(
     (user) =>
-      !friends.some((friend) => friend._id === user._id) &&
-      user._id !== "current-user-id"
+      user.name?.trim() &&
+      !friends.some((f) => f._id === user._id) &&
+      user._id !== currentUser._id &&
+      !sentRequests.includes(user._id)
   );
+
+  const validFriends = friends.filter((friend) => friend.name?.trim());
 
   return (
     <main className="futuristic-container">
-      {/* Animated background elements */}
       <div className="cyber-grid"></div>
       <div className="glowing-orbs">
         <div className="orb orb-1"></div>
@@ -142,8 +178,23 @@ function HomeComponent() {
         <div className="orb orb-3"></div>
       </div>
 
+      {/* Notification Popup */}
+      {showNotification && (
+        <div className="cyber-notification">
+          <div className="cyber-notification-content">
+            <span className="notification-icon">🔔</span>
+            <span>{notification}</span>
+            <button
+              className="notification-close"
+              onClick={() => setShowNotification(false)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="app-wrapper">
-        {/* Sidebar */}
         <aside className="cyber-sidebar">
           <div className="sidebar-header">
             <h2 className="neon-text">CONNECTIONS</h2>
@@ -154,12 +205,17 @@ function HomeComponent() {
             >
               <div className="user-avatar">
                 <span className="avatar-icon">👤</span>
+                {incomingRequests.length > 0 && (
+                  <span className="notification-badge">
+                    {incomingRequests.length}
+                  </span>
+                )}
               </div>
             </button>
           </div>
 
+          {/* USER PROFILE */}
           {showUserProfile ? (
-            /* User Profile View */
             <div className="user-profile-view">
               <div className="profile-header">
                 <button
@@ -169,12 +225,10 @@ function HomeComponent() {
                   ← BACK
                 </button>
               </div>
-
               <div className="profile-content">
                 <div className="profile-avatar-large">
                   <span className="avatar-icon-large">👤</span>
                 </div>
-
                 <div className="profile-details">
                   <h3 className="profile-name">{currentUser.name}</h3>
                   <p className="profile-email">{currentUser.email}</p>
@@ -183,134 +237,98 @@ function HomeComponent() {
                     {new Date(currentUser.joined).toLocaleDateString()}
                   </p>
                 </div>
-
                 <div className="profile-stats">
                   <div className="stat-item">
-                    <span className="stat-number">{friends.length}</span>
+                    <span className="stat-number">{validFriends.length}</span>
                     <span className="stat-label">FRIENDS</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">{groups.length}</span>
-                    <span className="stat-label">GROUPS</span>
                   </div>
                   <div className="stat-item">
                     <span className="stat-number">{tasks.length}</span>
                     <span className="stat-label">TASKS</span>
                   </div>
                 </div>
-
-                <button className="cyber-button cyber-button-primary full-width">
-                  <span className="cyber-button-text">EDIT PROFILE</span>
-                </button>
-
-                <button
-                  className="cyber-button logout-button"
-                  onClick={() => (window.location.href = "/login")}
-                >
-                  <span className="cyber-button-text">LOGOUT</span>
-                </button>
               </div>
             </div>
           ) : (
-            /* Normal Sidebar Content */
             <>
-              <input
-                type="text"
-                placeholder="Search users..."
-                className="cyber-search"
-              />
-
-              <button
-                className="cyber-button cyber-button-primary"
-                onClick={createGroup}
-              >
-                <span className="cyber-button-glitch">➕</span>
-                <span className="cyber-button-text">CREATE GROUP</span>
-              </button>
-
-              {/* Add Friends Section */}
-              <div className="cyber-list-section">
-                <div className="section-header">
-                  <h3 className="cyber-subtitle">ADD FRIENDS</h3>
-                  <button
-                    className="toggle-button"
-                    onClick={() => setShowAddFriends(!showAddFriends)}
-                  >
-                    {showAddFriends ? "▲" : "▼"}
-                  </button>
-                </div>
-                {showAddFriends && (
+              {/* FRIEND REQUESTS */}
+              {incomingRequests.length > 0 && (
+                <div className="cyber-list-section">
+                  <h3 className="cyber-subtitle">FRIEND REQUESTS</h3>
                   <div className="scroll-container">
                     <ul className="cyber-list">
-                      {availableUsers.length > 0 ? (
-                        availableUsers.map((user) => (
-                          <li key={user._id} className="cyber-list-item">
-                            <span className="status-indicator offline"></span>
-                            <span>{user.name}</span>
+                      {incomingRequests.map((req) => (
+                        <li
+                          key={req._id}
+                          className="cyber-list-item request-item"
+                        >
+                          <span>{req.fromUser.name}</span>
+                          <div className="request-actions">
                             <button
-                              onClick={() => addFriend(user._id)}
-                              className="add-friend-btn"
-                              title="Add Friend"
+                              onClick={() =>
+                                acceptFriendRequest(req._id, req.fromUser)
+                              }
+                              className="accept-friend-btn"
                             >
-                              +
+                              ✔
                             </button>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="cyber-list-item empty">
-                          <span>No users available to add</span>
+                            <button
+                              onClick={() =>
+                                declineFriendRequest(req._id, req.fromUser.name)
+                              }
+                              className="decline-friend-btn"
+                            >
+                              ✖
+                            </button>
+                          </div>
                         </li>
-                      )}
+                      ))}
                     </ul>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Friends Network Section */}
+              {/* USERS TO ADD AS FRIENDS */}
               <div className="cyber-list-section">
-                <h3 className="cyber-subtitle">FRIENDS NETWORK</h3>
+                <h3 className="cyber-subtitle">USERS</h3>
                 <div className="scroll-container">
                   <ul className="cyber-list">
-                    {friends.length > 0 ? (
-                      friends.map((friend) => (
-                        <li key={friend._id} className="cyber-list-item">
-                          <span className="status-indicator online"></span>
-                          <span>{friend.name}</span>
-                          <button
-                            onClick={() => removeFriend(friend._id)}
-                            className="remove-friend-btn"
-                            title="Remove Friend"
-                          >
-                            ×
-                          </button>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="cyber-list-item empty">
-                        <span>No friends yet</span>
+                    {availableUsers.map((user) => (
+                      <li key={user._id} className="cyber-list-item">
+                        <span>{user.name}</span>
+                        <button
+                          onClick={() => sendFriendRequest(user._id, user.name)}
+                          className="add-friend-btn"
+                          disabled={sentRequests.includes(user._id)}
+                        >
+                          {sentRequests.includes(user._id)
+                            ? "⏳"
+                            : "Add Friend"}
+                        </button>
                       </li>
-                    )}
+                    ))}
                   </ul>
                 </div>
               </div>
 
-              {/* Group Channels Section */}
+              {/* FRIENDS NETWORK */}
               <div className="cyber-list-section">
-                <h3 className="cyber-subtitle">GROUP CHANNELS</h3>
+                <h3 className="cyber-subtitle">
+                  FRIENDS ({validFriends.length})
+                </h3>
                 <div className="scroll-container">
                   <ul className="cyber-list">
-                    {groups.length > 0 ? (
-                      groups.map((group) => (
-                        <li key={group._id} className="cyber-list-item">
-                          <span className="channel-tag">#</span>
-                          <span>{group.name}</span>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="cyber-list-item empty">
-                        <span>No groups yet</span>
+                    {validFriends.map((friend) => (
+                      <li key={friend._id} className="cyber-list-item">
+                        <span>{friend.name}</span>
+                        <button
+                          onClick={() => removeFriend(friend._id, friend.name)}
+                          className="remove-friend-btn"
+                        >
+                          Remove
+                        </button>
                       </li>
-                    )}
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -318,96 +336,65 @@ function HomeComponent() {
           )}
         </aside>
 
-        {/* Main Task Area */}
+        {/* MAIN TASK AREA */}
         <section className="cyber-main">
           <div className="main-header">
             <h1 className="cyber-title">
               <span className="cyber-title-text">NEO TASK</span>
               <span className="cyber-title-cursor pulse">_</span>
             </h1>
-            <div className="user-status">
-              <span className="user-badge">{currentUser.name}</span>
-            </div>
           </div>
 
-          {/* Input Section */}
+          {/* ADD TASK */}
           <div className="cyber-input-section">
-            <div className="cyber-input-wrapper">
-              <input
-                type="text"
-                placeholder="ENTER NEW TASK..."
-                className="cyber-input"
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                onKeyPress={handleKeyPress}
-              />
-
-              <div className="datetime-inputs">
-                <div className="input-group">
-                  <label className="input-label">DATE</label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="cyber-date-input"
-                  />
-                </div>
-
-                <div className="input-group">
-                  <label className="input-label">TIME</label>
-                  <input
-                    type="time"
-                    value={dueTime}
-                    onChange={(e) => setDueTime(e.target.value)}
-                    className="cyber-time-input"
-                  />
-                </div>
-
-                <button onClick={addTask} className="cyber-add-btn">
-                  <span className="btn-hacker-text">ADD</span>
-                  <div className="btn-overlay"></div>
-                </button>
-              </div>
-            </div>
+            <input
+              type="text"
+              placeholder="ENTER NEW TASK..."
+              className="cyber-input"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="cyber-date-input"
+            />
+            <input
+              type="time"
+              value={dueTime}
+              onChange={(e) => setDueTime(e.target.value)}
+              className="cyber-time-input"
+            />
+            <button onClick={addTask} className="cyber-add-btn">
+              ADD
+            </button>
           </div>
 
-          {/* Task List */}
+          {/* TASK LIST */}
           <div className="cyber-tasks-container scroll-container">
             {tasks.length > 0 ? (
               <ul className="cyber-task-list">
                 {tasks.map((task) => (
                   <li key={task._id} className="cyber-task-item">
-                    <div className="task-content">
-                      <span className="task-checkbox">
-                        <input type="checkbox" className="cyber-checkbox" />
-                        <span className="checkmark"></span>
+                    <span>{task.title}</span>
+                    {task.dueDate && (
+                      <span className="task-date">
+                        ⏰ {new Date(task.dueDate).toLocaleString()}
                       </span>
-                      <span className="task-text">{task.title}</span>
-                      {task.dueDate && (
-                        <span className="task-date">
-                          ⏰ {new Date(task.dueDate).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="task-actions">
-                      <button
-                        onClick={() => deleteTask(task._id)}
-                        className="cyber-delete-btn"
-                      >
-                        <span className="delete-icon">✖</span>
-                        <span className="tooltip">DELETE</span>
-                      </button>
-                    </div>
-                    <div className="cyber-glow-bar"></div>
+                    )}
+                    <button
+                      onClick={() => deleteTask(task._id)}
+                      className="cyber-delete-btn"
+                    >
+                      ✖
+                    </button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="cyber-empty-state">
-                <div className="hologram-icon">⊚</div>
-                <p>SYSTEM READY. AWAITING TASKS.</p>
-                <div className="scan-line"></div>
-              </div>
+              <p>No tasks yet</p>
             )}
           </div>
         </section>
