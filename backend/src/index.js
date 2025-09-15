@@ -54,6 +54,10 @@ const options = {
   apis: ["./routes/*.js"],
 };
 
+app.get("/vapidPublicKey", (_req, res) => {
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
 const swaggerSpec = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
