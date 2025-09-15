@@ -4,32 +4,45 @@ const cors = require("cors");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const webpush = require("web-push");
-
-// Load .env
 require("dotenv").config();
 
-// Shared subscriptions store
 const { subscriptions } = require("./subscriptions");
 
-// Import routes
 const taskRoutes = require("./routes/taskRoute");
 const authRoutes = require("./routes/authRoute");
+const userRoutes = require("./routes/userRoute"); // <-- new
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ----- CORS CONFIG -----
+const allowedOrigins = [
+  "http://localhost:5173", // Vite dev
+  "https://task-2-3lr4.onrender.com", // production frontend
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ----- JSON Parsing -----
 app.use(express.json());
 
-// ----------------- Swagger Config -----------------
+// ----- Swagger -----
 const options = {
   definition: {
     openapi: "3.0.0",
-    info: {
-      title: "Task API",
-      version: "1.0.0",
-      description: "API documentation for Task Manager",
-    },
+    info: { title: "Task API", version: "1.0.0" },
     servers: [
       {
         url:
@@ -38,58 +51,52 @@ const options = {
       },
     ],
   },
-  apis: ["./src/routes/*.js"], // ✅ adjust if your routes folder differs
+  apis: ["./routes/*.js"],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// ----------------- Push Notifications Setup -----------------
+// ----- Push Notifications -----
 webpush.setVapidDetails(
-  "mailto:your@email.com", // change to your email
+  "mailto:your@email.com",
   process.env.VAPID_PUBLIC_KEY,
   process.env.VAPID_PRIVATE_KEY
 );
 
-// Save subscription
 app.post("/subscribe", (req, res) => {
   const subscription = req.body;
   subscriptions.push(subscription);
   res.status(201).json({ message: "Subscribed successfully" });
 });
 
-// Send notification manually (test endpoint)
 app.post("/sendNotification", async (req, res) => {
   const { title, body } = req.body;
-
   const payload = JSON.stringify({
     title: title || "Task Update",
     body: body || "You have a new task or group update!",
     icon: "/icon.png",
   });
 
-  const sendPromises = subscriptions.map((sub) =>
-    webpush.sendNotification(sub, payload).catch((err) => {
-      console.error("Push error:", err);
-    })
+  await Promise.all(
+    subscriptions.map((sub) =>
+      webpush.sendNotification(sub, payload).catch(console.error)
+    )
   );
 
-  await Promise.all(sendPromises);
   res.json({ message: "Notifications sent" });
 });
 
-// ----------------- Routes -----------------
+// ----- ROUTES -----
 app.use("/tasks", taskRoutes);
 app.use("/auth", authRoutes);
+app.use("/", userRoutes); // <-- added user routes
 
-// Health & default route
-app.get("/health", (_req, res) => {
-  res.status(200).json({ status: "ok" });
-});
+// ----- Health & Default Routes -----
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/", (_req, res) => res.send("Hello, Task Manager API!"));
 
-app.get("/", (req, res) => res.send("Hello, Task Manager API!"));
-
-// ----------------- MongoDB Connection -----------------
+// ----- MongoDB Connection -----
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -99,7 +106,7 @@ mongoose
         `✅ Server running on http://localhost:${process.env.PORT || 5000}`
       );
       console.log(
-        `📘 Swagger docs available at http://localhost:${
+        `📘 Swagger docs at http://localhost:${
           process.env.PORT || 5000
         }/api-docs`
       );
@@ -109,3 +116,5 @@ mongoose
     console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   });
+
+module.exports = app;

@@ -1,4 +1,4 @@
 // subscriptions.js
-export default {
+module.exports = {
   subscriptions: [],
 };

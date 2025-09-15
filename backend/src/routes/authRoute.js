@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../models/User");
+const bcrypt = require("bcrypt");
 const router = express.Router();
 
 /**
@@ -30,11 +31,40 @@ const router = express.Router();
  *         description: User created
  */
 router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "Email and password required" });
-  const user = await User.create({ email, password });
-  res.status(201).json(user);
+  const { name, email, password, confirmPassword } = req.body;
+
+  if (!name || !email || !password || !confirmPassword) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ error: "Passwords do not match" });
+  }
+
+  try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    res
+      .status(201)
+      .json({ message: "User registered successfully", userId: user._id });
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 /**
