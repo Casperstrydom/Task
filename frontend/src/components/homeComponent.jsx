@@ -34,7 +34,7 @@ function HomeComponent() {
 
     axios
       .get(`${apiBase}/friend-requests/sent`)
-      .then((res) => setSentRequests(res.data))
+      .then((res) => setSentRequests(res.data.map((u) => u._id))) // store just IDs
       .catch(console.error);
   }, []);
 
@@ -110,27 +110,23 @@ function HomeComponent() {
       .catch(console.error);
   };
 
-  const acceptFriendRequest = (requestId, fromUser) => {
+  const acceptFriendRequest = (fromUserId, fromUser) => {
     axios
-      .post(`${apiBase}/friend-requests/accept`, { requestId })
+      .post(`${apiBase}/friend-requests/accept`, { fromUserId })
       .then(() => {
-        setFriends([...friends, fromUser]);
-        setIncomingRequests(
-          incomingRequests.filter((r) => r._id !== requestId)
-        );
+        setFriends((prev) => [...prev, fromUser]);
+        setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId));
         showTempNotification(`${fromUser.name} is now your friend!`);
         fetchData();
       })
       .catch(console.error);
   };
 
-  const declineFriendRequest = (requestId, fromUserName) => {
+  const declineFriendRequest = (fromUserId, fromUserName) => {
     axios
-      .post(`${apiBase}/friend-requests/decline`, { requestId })
+      .post(`${apiBase}/friend-requests/decline`, { fromUserId })
       .then(() => {
-        setIncomingRequests(
-          incomingRequests.filter((r) => r._id !== requestId)
-        );
+        setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId));
         showTempNotification(`Declined friend request from ${fromUserName}`);
       })
       .catch(console.error);
@@ -140,7 +136,18 @@ function HomeComponent() {
     axios
       .delete(`${apiBase}/friends/${friendId}`)
       .then(() => {
-        setFriends(friends.filter((f) => f._id !== friendId));
+        setFriends((prevFriends) => {
+          const removedFriend = prevFriends.find((f) => f._id === friendId);
+
+          // ✅ Only add back if we found them
+          if (removedFriend) {
+            setAllUsers((prevUsers) => [...prevUsers, removedFriend]);
+          }
+
+          // ✅ Return filtered list
+          return prevFriends.filter((f) => f._id !== friendId);
+        });
+
         showTempNotification(`Removed ${friendName} from friends`);
       })
       .catch(console.error);
@@ -262,19 +269,17 @@ function HomeComponent() {
                           key={req._id}
                           className="cyber-list-item request-item"
                         >
-                          <span>{req.fromUser.name}</span>
+                          <span>{req.name}</span>
                           <div className="request-actions">
                             <button
-                              onClick={() =>
-                                acceptFriendRequest(req._id, req.fromUser)
-                              }
+                              onClick={() => acceptFriendRequest(req._id, req)}
                               className="accept-friend-btn"
                             >
                               ✔
                             </button>
                             <button
                               onClick={() =>
-                                declineFriendRequest(req._id, req.fromUser.name)
+                                declineFriendRequest(req._id, req.name)
                               }
                               className="decline-friend-btn"
                             >
