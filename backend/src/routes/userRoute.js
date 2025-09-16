@@ -90,13 +90,15 @@ router.post("/friend-requests", async (req, res) => {
 });
 
 // POST /friend-requests/accept
+// POST /friend-requests/accept
 router.post("/friend-requests/accept", async (req, res) => {
-  const { fromUserId } = req.body;
+  const { fromUserId } = req.body; // ✅ match frontend param
   try {
     const me = await User.findOne();
     const sender = await User.findById(fromUserId);
     if (!sender) return res.status(404).json({ error: "User not found" });
 
+    // remove pending request
     me.friendRequests = me.friendRequests.filter(
       (id) => id.toString() !== sender._id.toString()
     );
@@ -104,13 +106,14 @@ router.post("/friend-requests/accept", async (req, res) => {
       (id) => id.toString() !== me._id.toString()
     );
 
+    // add to friends
     if (!me.friends.includes(sender._id)) me.friends.push(sender._id);
     if (!sender.friends.includes(me._id)) sender.friends.push(me._id);
 
     await me.save();
     await sender.save();
 
-    res.json({ message: "Friend request accepted" });
+    res.json({ message: "Friend request accepted", friend: sender });
   } catch (err) {
     res.status(500).json({ error: "Failed to accept request" });
   }
