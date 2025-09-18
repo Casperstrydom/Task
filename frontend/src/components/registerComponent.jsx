@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Added for navigation
 import "../main/index.css";
 
-const Register = ({ onRegister, switchToLogin }) => {
-  const navigate = useNavigate(); // ✅ Navigate after register
+const RegisterComponent = ({ onRegister, switchToLogin }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,36 +14,14 @@ const Register = ({ onRegister, switchToLogin }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match!");
       return;
     }
-
-    try {
-      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-      const res = await fetch(`${apiBase}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Registration failed"); // ✅ Error handling
-
-      if (data.token) localStorage.setItem("token", data.token); // ✅ JWT storage
-      onRegister(data.user);
-
-      console.log("Registration successful", data.user);
-
-      navigate("/home"); // ✅ Redirect after registration
-    } catch (err) {
-      console.error("Registration error:", err);
-      alert(err.message);
-    }
+    // Call parent onRegister with form data
+    onRegister(formData);
   };
 
   return (
@@ -159,4 +135,4 @@ const Register = ({ onRegister, switchToLogin }) => {
   );
 };
 
-export default Register;
+export default RegisterComponent;
