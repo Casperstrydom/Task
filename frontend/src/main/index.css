@@ -1,4 +1,7 @@
 /* Main futuristic styles with mobile-first approach */
+html {
+  background-color: rgb(58, 75, 107);
+}
 .futuristic-container {
   position: relative;
   min-height: 100vh;
