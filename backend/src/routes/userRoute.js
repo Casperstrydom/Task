@@ -9,20 +9,15 @@ const router = express.Router();
 // GET /users → fetch all users (except me)
 router.get("/users", auth, async (req, res) => {
   try {
-    // Fetch all users except the logged-in user
     const users = await User.find(
       { _id: { $ne: req.userId } },
       "name email createdAt"
-    ).sort({ createdAt: -1 }); // optional: sort newest first
+    ).sort({ createdAt: -1 });
 
-    res.json({
-      success: true,
-      count: users.length,
-      users,
-    });
+    res.json(users); // 👈 return array directly
   } catch (err) {
     console.error("Fetch users error:", err);
-    res.status(500).json({ success: false, error: "Failed to fetch users" });
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
