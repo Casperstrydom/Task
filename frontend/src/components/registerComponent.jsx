@@ -14,7 +14,7 @@ const Register = ({ onRegister, switchToLogin }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
@@ -22,12 +22,31 @@ const Register = ({ onRegister, switchToLogin }) => {
       return;
     }
 
-    onRegister(formData);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE;
+      const res = await fetch(`${apiBase}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Registration failed");
+
+      // Store JWT automatically after registration
+      if (data.token) localStorage.setItem("token", data.token);
+
+      console.log("Registration successful", data.user);
+      onRegister(data.user);
+    } catch (err) {
+      console.error("Registration error:", err);
+      alert(err.message);
+    }
   };
 
   return (
     <div className="futuristic-auth-container">
-      {/* Animated background elements */}
       <div className="cyber-grid"></div>
       <div className="glowing-orbs">
         <div className="orb orb-1"></div>

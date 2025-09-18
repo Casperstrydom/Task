@@ -4,7 +4,6 @@ import "../main/index.css";
 const Login = ({ onLogin, switchToRegister }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
 
-  // Ask permission for notifications on login page load
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission().then((permission) => {
@@ -20,16 +19,31 @@ const Login = ({ onLogin, switchToRegister }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    onLogin(formData);
 
-    // Register service worker and subscribe for push notifications
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      try {
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE;
+      const res = await fetch(`${apiBase}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Login failed");
+
+      // Store JWT in localStorage
+      if (data.token) localStorage.setItem("token", data.token);
+
+      console.log("Login successful", data.user);
+
+      onLogin(data.user);
+
+      // Push notifications
+      if ("serviceWorker" in navigator && "PushManager" in window) {
         const registration = await navigator.serviceWorker.register("/sw.js");
-
         let subscription = await registration.pushManager.getSubscription();
         if (!subscription) {
-          // Use VAPID public key from frontend .env
           const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
           const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
 
@@ -39,8 +53,6 @@ const Login = ({ onLogin, switchToRegister }) => {
           });
         }
 
-        // Send subscription to backend
-        const apiBase = import.meta.env.VITE_API_BASE;
         await fetch(`${apiBase}/subscribe`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -48,9 +60,10 @@ const Login = ({ onLogin, switchToRegister }) => {
         });
 
         console.log("Push subscription successful");
-      } catch (err) {
-        console.error("Push subscription failed:", err);
       }
+    } catch (err) {
+      console.error("Login error:", err);
+      alert(err.message);
     }
   };
 
