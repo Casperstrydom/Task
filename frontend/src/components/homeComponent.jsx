@@ -132,6 +132,7 @@ function HomeComponent() {
       .catch(console.error);
   };
 
+  // Remove friend
   const removeFriend = (friendId, friendName) => {
     axios
       .delete(`${apiBase}/friends/${friendId}`)
