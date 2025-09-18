@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import axios from "axios";
 import Home from "./main/Home.jsx";
 import Login from "./main/Login.jsx";
 import Register from "./main/Register.jsx";
 
-// Base URL for backend API
 const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    // Register service worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js")
@@ -20,19 +24,14 @@ function App() {
         .catch((err) => console.error("❌ SW registration failed:", err));
     }
 
-    // Subscribe user for push notifications
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
       try {
         const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          console.warn("⚠️ Push notifications permission denied");
-          return;
-        }
+        if (permission !== "granted") return;
 
         const registration = await navigator.serviceWorker.ready;
-
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(
@@ -62,6 +61,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Default route */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
         <Route path="/home" element={<Home currentUser={currentUser} />} />
         <Route
           path="/login"
@@ -76,12 +78,10 @@ function App() {
   );
 }
 
-// Wrapper for Login to handle navigation & state
 function LoginWrapper({ setCurrentUser }) {
   const navigate = useNavigate();
 
   const handleLogin = (loginData) => {
-    // Mock login user
     const loggedUser = {
       name: "Logged User",
       email: loginData.email,
@@ -99,7 +99,6 @@ function LoginWrapper({ setCurrentUser }) {
   );
 }
 
-// Wrapper for Register to handle navigation & state
 function RegisterWrapper({ setCurrentUser }) {
   const navigate = useNavigate();
 

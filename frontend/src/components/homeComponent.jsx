@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import "../main/index.css";
 
@@ -18,74 +18,81 @@ function HomeComponent() {
     email: "",
     joined: "",
   });
-
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [notification, setNotification] = useState(null);
   const [showNotification, setShowNotification] = useState(false);
 
-  const token = localStorage.getItem("token");
+  // ---------------- AUTH HEADER HELPER ----------------
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return null; // skip requests if not logged in
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
 
-  // Memoized headers
-  const authHeaders = useMemo(
-    () => ({ headers: { Authorization: `Bearer ${token}` } }),
-    [token]
-  );
-
-  // Fetch friend requests
+  // ---------------- FETCH FRIEND REQUESTS ----------------
   const fetchFriendRequests = useCallback(() => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     axios
-      .get(`${apiBase}/friend-requests/incoming`, authHeaders)
+      .get(`${apiBase}/friend-requests/incoming`, headers)
       .then((res) => setIncomingRequests(res.data))
       .catch(console.error);
 
     axios
-      .get(`${apiBase}/friend-requests/sent`, authHeaders)
+      .get(`${apiBase}/friend-requests/sent`, headers)
       .then((res) => setSentRequests(res.data.map((u) => u._id)))
       .catch(console.error);
-  }, [authHeaders]);
+  }, []);
 
-  // Fetch initial data
+  // ---------------- FETCH INITIAL DATA ----------------
   const fetchData = useCallback(() => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     axios
-      .get(`${apiBase}/tasks`, authHeaders)
+      .get(`${apiBase}/tasks`, headers)
       .then((res) => setTasks(res.data))
       .catch(console.error);
 
     axios
-      .get(`${apiBase}/friends`, authHeaders)
+      .get(`${apiBase}/friends`, headers)
       .then((res) => setFriends(res.data))
       .catch(console.error);
 
     axios
-      .get(`${apiBase}/users`, authHeaders)
+      .get(`${apiBase}/users`, headers)
       .then((res) => setAllUsers(res.data))
       .catch(console.error);
 
     axios
-      .get(`${apiBase}/user/me`, authHeaders)
+      .get(`${apiBase}/user/me`, headers)
       .then((res) => setCurrentUser(res.data))
       .catch(console.error);
 
     fetchFriendRequests();
-  }, [authHeaders, fetchFriendRequests]);
+  }, [fetchFriendRequests]);
 
-  // Load data on mount
+  // ---------------- LOAD DATA ON MOUNT ----------------
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchFriendRequests, 5000);
     return () => clearInterval(interval);
   }, [fetchData, fetchFriendRequests]);
 
-  // Add task
+  // ---------------- TASK FUNCTIONS ----------------
   const addTask = () => {
     if (!newTask.trim()) return;
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     const taskData = {
       title: newTask,
       dueDate: dueDate && dueTime ? `${dueDate}T${dueTime}:00.000Z` : null,
     };
     axios
-      .post(`${apiBase}/tasks`, taskData, authHeaders)
+      .post(`${apiBase}/tasks`, taskData, headers)
       .then((res) => {
         setTasks([...tasks, res.data]);
         setNewTask("");
@@ -95,18 +102,23 @@ function HomeComponent() {
       .catch(console.error);
   };
 
-  // Delete task
   const deleteTask = (id) => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     axios
-      .delete(`${apiBase}/tasks/${id}`, authHeaders)
+      .delete(`${apiBase}/tasks/${id}`, headers)
       .then(() => setTasks(tasks.filter((task) => task._id !== id)))
       .catch(console.error);
   };
 
-  // Friend request actions
+  // ---------------- FRIEND REQUEST FUNCTIONS ----------------
   const sendFriendRequest = (userId, userName) => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     axios
-      .post(`${apiBase}/friend-requests`, { toUserId: userId }, authHeaders)
+      .post(`${apiBase}/friend-requests`, { toUserId: userId }, headers)
       .then(() => {
         setSentRequests((prev) => [...prev, userId]);
         showTempNotification(`Friend request sent to ${userName}`);
@@ -115,8 +127,11 @@ function HomeComponent() {
   };
 
   const acceptFriendRequest = (fromUserId, fromUser) => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     axios
-      .post(`${apiBase}/friend-requests/accept`, { fromUserId }, authHeaders)
+      .post(`${apiBase}/friend-requests/accept`, { fromUserId }, headers)
       .then(() => {
         setFriends((prev) => [...prev, fromUser]);
         setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId));
@@ -127,8 +142,11 @@ function HomeComponent() {
   };
 
   const declineFriendRequest = (fromUserId, fromUserName) => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     axios
-      .post(`${apiBase}/friend-requests/decline`, { fromUserId }, authHeaders)
+      .post(`${apiBase}/friend-requests/decline`, { fromUserId }, headers)
       .then(() => {
         setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId));
         showTempNotification(`Declined friend request from ${fromUserName}`);
@@ -137,8 +155,11 @@ function HomeComponent() {
   };
 
   const removeFriend = (friendId, friendName) => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     axios
-      .delete(`${apiBase}/friends/${friendId}`, authHeaders)
+      .delete(`${apiBase}/friends/${friendId}`, headers)
       .then(() => {
         setFriends((prevFriends) => {
           const removedFriend = prevFriends.find((f) => f._id === friendId);
@@ -152,6 +173,7 @@ function HomeComponent() {
       .catch(console.error);
   };
 
+  // ---------------- UTILS ----------------
   const showTempNotification = (message) => {
     setNotification(message);
     setShowNotification(true);
@@ -162,6 +184,7 @@ function HomeComponent() {
     if (e.key === "Enter") addTask();
   };
 
+  // ---------------- FILTERED USERS ----------------
   const availableUsers = allUsers.filter(
     (user) =>
       user.name?.trim() &&
@@ -171,6 +194,8 @@ function HomeComponent() {
   );
 
   const validFriends = friends.filter((friend) => friend.name?.trim());
+
+  // ---------------- RENDER ----------------
   return (
     <main className="futuristic-container">
       <div className="cyber-grid"></div>
