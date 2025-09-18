@@ -18,25 +18,21 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173", // Vite dev
   "https://task-2-3lr4.onrender.com",
-  "https://task-sqtw.onrender.com", // <-- new deployed frontend
+  "https://task-sqtw.onrender.com", // deployed frontend
 ];
 
+// Simple CORS middleware
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow tools like Postman
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        console.warn("Blocked by CORS:", origin);
-        return callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Handle preflight OPTIONS requests for all routes
+app.options("*", cors({ origin: allowedOrigins, credentials: true }));
 
 // ----- JSON Parsing -----
 app.use(express.json());
@@ -57,12 +53,13 @@ const options = {
   apis: ["./routes/*.js"],
 };
 
+const swaggerSpec = swaggerJsdoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// ----- VAPID Public Key Endpoint -----
 app.get("/vapidPublicKey", (_req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
 });
-
-const swaggerSpec = swaggerJsdoc(options);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ----- Push Notifications -----
 webpush.setVapidDetails(
