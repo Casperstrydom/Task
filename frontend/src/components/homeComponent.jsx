@@ -67,25 +67,21 @@ function HomeComponent() {
     const headers = getAuthHeaders();
     if (!headers) return;
 
-    // Tasks
     axios
       .get(`${apiBase}/tasks`, headers)
       .then((res) => setTasks(Array.isArray(res.data) ? res.data : []))
       .catch(handleTokenError);
 
-    // Friends
     axios
       .get(`${apiBase}/friends`, headers)
       .then((res) => setFriends(Array.isArray(res.data) ? res.data : []))
       .catch(handleTokenError);
 
-    // Users
     axios
       .get(`${apiBase}/users`, headers)
       .then((res) => setAllUsers(Array.isArray(res.data) ? res.data : []))
       .catch(handleTokenError);
 
-    // Current User
     axios
       .get(`${apiBase}/user/me`, headers)
       .then((res) => setCurrentUser(res.data || {}))
@@ -220,6 +216,13 @@ function HomeComponent() {
     ? friends.filter((friend) => friend.name?.trim())
     : [];
 
+  // ---------------- SORTED TASKS ----------------
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return new Date(a.dueDate) - new Date(b.dueDate);
+  });
+
   // ---------------- RENDER ----------------
   return (
     <main className="futuristic-container">
@@ -230,7 +233,6 @@ function HomeComponent() {
         <div className="orb orb-3"></div>
       </div>
 
-      {/* Notification Popup */}
       {showNotification && (
         <div className="cyber-notification">
           <div className="cyber-notification-content">
@@ -266,7 +268,6 @@ function HomeComponent() {
             </button>
           </div>
 
-          {/* USER PROFILE */}
           {showUserProfile ? (
             <div className="user-profile-view">
               <div className="profile-header">
@@ -286,7 +287,9 @@ function HomeComponent() {
                   <p className="profile-email">{currentUser.email}</p>
                   <p className="profile-joined">
                     Member since:{" "}
-                    {new Date(currentUser.joined).toLocaleDateString()}
+                    {currentUser.joined
+                      ? new Date(currentUser.joined).toLocaleDateString()
+                      : "Unknown"}
                   </p>
                 </div>
                 <div className="profile-stats">
@@ -303,7 +306,6 @@ function HomeComponent() {
             </div>
           ) : (
             <>
-              {/* FRIEND REQUESTS */}
               {incomingRequests.length > 0 && (
                 <div className="cyber-list-section">
                   <h3 className="cyber-subtitle">FRIEND REQUESTS</h3>
@@ -338,7 +340,6 @@ function HomeComponent() {
                 </div>
               )}
 
-              {/* USERS TO ADD AS FRIENDS */}
               <div className="cyber-list-section">
                 <h3 className="cyber-subtitle">USERS</h3>
                 <div className="scroll-container">
@@ -361,7 +362,6 @@ function HomeComponent() {
                 </div>
               </div>
 
-              {/* FRIENDS NETWORK */}
               <div className="cyber-list-section">
                 <h3 className="cyber-subtitle">
                   FRIENDS ({validFriends.length})
@@ -386,7 +386,6 @@ function HomeComponent() {
           )}
         </aside>
 
-        {/* MAIN TASK AREA */}
         <section className="cyber-main">
           <div className="main-header">
             <h1 className="cyber-title">
@@ -395,7 +394,6 @@ function HomeComponent() {
             </h1>
           </div>
 
-          {/* ADD TASK */}
           <div className="cyber-input-section">
             <input
               type="text"
@@ -422,11 +420,10 @@ function HomeComponent() {
             </button>
           </div>
 
-          {/* TASK LIST */}
           <div className="cyber-tasks-container scroll-container">
-            {tasks.length > 0 ? (
+            {sortedTasks.length > 0 ? (
               <ul className="cyber-task-list">
-                {tasks.map((task) => (
+                {sortedTasks.map((task) => (
                   <li key={task._id} className="cyber-task-item">
                     <span>{task.title}</span>
                     {task.dueDate && (
