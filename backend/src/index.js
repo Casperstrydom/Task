@@ -21,24 +21,29 @@ const allowedOrigins = [
   "https://task-sqtw.onrender.com", // deployed frontend
 ];
 
-// Simple CORS middleware
+// Enable CORS for allowed origins
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow Postman or server-to-server requests
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        console.warn("Blocked by CORS:", origin);
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Handle preflight OPTIONS requests for all routes
-app.options("*", cors({ origin: allowedOrigins, credentials: true }));
-
 // ----- JSON Parsing -----
 app.use(express.json());
 
 // ----- Swagger -----
-const options = {
+const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: { title: "Task API", version: "1.0.0" },
@@ -53,7 +58,7 @@ const options = {
   apis: ["./routes/*.js"],
 };
 
-const swaggerSpec = swaggerJsdoc(options);
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ----- VAPID Public Key Endpoint -----
