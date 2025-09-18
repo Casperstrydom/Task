@@ -35,10 +35,10 @@ const jwt = require("jsonwebtoken");
 router.post("/register", async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
 
+  // Basic validation
   if (!name || !email || !password || !confirmPassword) {
     return res.status(400).json({ error: "All fields are required" });
   }
-
   if (password !== confirmPassword) {
     return res.status(400).json({ error: "Passwords do not match" });
   }
@@ -57,16 +57,16 @@ router.post("/register", async (req, res) => {
       password: hashedPassword,
     });
 
-    // ✅ Safe JWT generation with fallback
-    let token = null;
-    try {
-      const jwtSecret = process.env.JWT_SECRET || "dev_secret";
-      token = jwt.sign({ id: user._id }, jwtSecret, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1h",
-      });
-    } catch (jwtError) {
-      console.error("JWT generation failed:", jwtError);
+    // JWT generation
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error("JWT_SECRET not set");
+      return res.status(500).json({ error: "Server configuration error" });
     }
+
+    const token = jwt.sign({ id: user._id }, jwtSecret, {
+      expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+    });
 
     res.status(201).json({
       message: "User registered successfully",
@@ -108,6 +108,9 @@ router.post("/register", async (req, res) => {
  */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
 
   try {
     const user = await User.findOne({ email });
@@ -122,16 +125,15 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // ✅ Safe JWT generation with fallback
-    let token = null;
-    try {
-      const jwtSecret = process.env.JWT_SECRET || "dev_secret";
-      token = jwt.sign({ id: user._id }, jwtSecret, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1h",
-      });
-    } catch (jwtError) {
-      console.error("JWT generation failed:", jwtError);
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error("JWT_SECRET not set");
+      return res.status(500).json({ error: "Server configuration error" });
     }
+
+    const token = jwt.sign({ id: user._id }, jwtSecret, {
+      expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+    });
 
     console.log("Login successful for:", email);
 
