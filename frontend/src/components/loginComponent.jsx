@@ -6,6 +6,7 @@ const Login = ({ onLogin, switchToRegister }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
 
+  // Request Notification permission once
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission().then((permission) => {
@@ -33,25 +34,65 @@ const Login = ({ onLogin, switchToRegister }) => {
       const data = await res.json();
 
       if (!res.ok) {
+        // Only backend errors trigger this
         throw new Error(
           data.error || "Login failed. Please check your credentials."
         );
       }
 
-      // Store JWT only if it exists
+      // ✅ Store JWT only if it exists
       if (data.token) localStorage.setItem("token", data.token);
 
-      console.log("Login successful", data.user);
+      console.log("✅ Login successful", data.user);
 
+      // Update frontend state
       onLogin(data.user);
 
       // Navigate to /home
       navigate("/home");
+
+      // --- Optional Push Notifications ---
+      try {
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+          const registration = await navigator.serviceWorker.register("/sw.js");
+          let subscription = await registration.pushManager.getSubscription();
+          if (!subscription) {
+            const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+            const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: convertedKey,
+            });
+          }
+
+          await fetch(`${apiBase}/subscribe`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(subscription),
+          });
+
+          console.log("✅ Subscribed for push notifications");
+        }
+      } catch (pushErr) {
+        // 🚨 Push errors are optional and won’t block login
+        console.warn("❌ Push subscription failed:", pushErr);
+      }
     } catch (err) {
-      console.error("Login error:", err);
+      console.error("❌ Login error:", err);
       alert(err.message);
     }
   };
+
+  // Helper for VAPID key conversion
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+  }
 
   return (
     <div className="futuristic-auth-container">

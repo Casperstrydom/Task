@@ -38,12 +38,22 @@ function HomeComponent() {
     axios
       .get(`${apiBase}/friend-requests/incoming`, headers)
       .then((res) => setIncomingRequests(res.data))
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Incoming requests error:", err);
+        if (err.response?.status === 403) {
+          alert("Session expired or invalid token. Please log in again.");
+        }
+      });
 
     axios
       .get(`${apiBase}/friend-requests/sent`, headers)
       .then((res) => setSentRequests(res.data.map((u) => u._id)))
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Sent requests error:", err);
+        if (err.response?.status === 403) {
+          alert("Session expired or invalid token. Please log in again.");
+        }
+      });
   }, []);
 
   // ---------------- FETCH INITIAL DATA ----------------
@@ -64,12 +74,22 @@ function HomeComponent() {
     axios
       .get(`${apiBase}/users`, headers)
       .then((res) => setAllUsers(res.data))
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Users fetch error:", err);
+        if (err.response?.status === 403) {
+          alert("Session expired or invalid token. Please log in again.");
+        }
+      });
 
     axios
       .get(`${apiBase}/user/me`, headers)
       .then((res) => setCurrentUser(res.data))
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Current user fetch error:", err);
+        if (err.response?.status === 403) {
+          alert("Session expired or invalid token. Please log in again.");
+        }
+      });
 
     fetchFriendRequests();
   }, [fetchFriendRequests]);
@@ -91,6 +111,7 @@ function HomeComponent() {
       title: newTask,
       dueDate: dueDate && dueTime ? `${dueDate}T${dueTime}:00.000Z` : null,
     };
+
     axios
       .post(`${apiBase}/tasks`, taskData, headers)
       .then((res) => {
@@ -99,7 +120,12 @@ function HomeComponent() {
         setDueDate("");
         setDueTime("");
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Add task error:", err);
+        if (err.response?.status === 403) {
+          alert("Session expired or invalid token. Please log in again.");
+        }
+      });
   };
 
   const deleteTask = (id) => {
