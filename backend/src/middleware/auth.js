@@ -6,10 +6,18 @@ module.exports = (req, res, next) => {
   if (!token) return res.status(401).json({ error: "No token" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verify JWT with fallback secret
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev_secret");
+
     req.userId = decoded.id;
     next();
-  } catch {
-    res.status(403).json({ error: "Invalid token" });
+  } catch (err) {
+    console.error("JWT verification failed:", err.message);
+    if (err.name === "TokenExpiredError") {
+      return res
+        .status(403)
+        .json({ error: "Token expired. Please log in again." });
+    }
+    res.status(403).json({ error: "Invalid token. Please log in again." });
   }
 };
