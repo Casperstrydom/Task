@@ -49,13 +49,23 @@ router.post("/", async (req, res) => {
       icon: "/icon.png",
     });
 
-    await Promise.all(
-      subscriptions.map((sub) =>
-        webpush.sendNotification(sub, payload).catch((err) => {
-          console.error("Push error:", err);
-        })
-      )
-    );
+    // Only send once per unique subscription endpoint
+    const uniqueSubsMap = new Map();
+    subscriptions.forEach((sub) => {
+      if (!uniqueSubsMap.has(sub.endpoint)) {
+        uniqueSubsMap.set(sub.endpoint, sub);
+      }
+    });
+    const uniqueSubs = Array.from(uniqueSubsMap.values());
+
+    // Send notification to all unique subscriptions
+    for (const sub of uniqueSubs) {
+      try {
+        await webpush.sendNotification(sub, payload);
+      } catch (err) {
+        console.error("Push error:", err);
+      }
+    }
 
     res.status(201).json({ success: true, task });
   } catch (err) {
