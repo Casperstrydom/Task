@@ -26,8 +26,18 @@ function HomeComponent() {
   // ---------------- AUTH HEADER HELPER ----------------
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
-    if (!token) return null; // skip requests if not logged in
+    if (!token) return null;
     return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  // ---------------- HANDLE TOKEN ERRORS ----------------
+  const handleTokenError = (err) => {
+    if (err.response?.status === 403) {
+      alert("Session expired or invalid token. Please log in again.");
+      localStorage.removeItem("token");
+    } else {
+      console.error(err);
+    }
   };
 
   // ---------------- FETCH FRIEND REQUESTS ----------------
@@ -37,23 +47,19 @@ function HomeComponent() {
 
     axios
       .get(`${apiBase}/friend-requests/incoming`, headers)
-      .then((res) => setIncomingRequests(res.data))
-      .catch((err) => {
-        console.error("Incoming requests error:", err);
-        if (err.response?.status === 403) {
-          alert("Session expired or invalid token. Please log in again.");
-        }
-      });
+      .then((res) =>
+        setIncomingRequests(Array.isArray(res.data) ? res.data : [])
+      )
+      .catch(handleTokenError);
 
     axios
       .get(`${apiBase}/friend-requests/sent`, headers)
-      .then((res) => setSentRequests(res.data.map((u) => u._id)))
-      .catch((err) => {
-        console.error("Sent requests error:", err);
-        if (err.response?.status === 403) {
-          alert("Session expired or invalid token. Please log in again.");
-        }
-      });
+      .then((res) =>
+        setSentRequests(
+          Array.isArray(res.data) ? res.data.map((u) => u._id) : []
+        )
+      )
+      .catch(handleTokenError);
   }, []);
 
   // ---------------- FETCH INITIAL DATA ----------------
@@ -61,35 +67,29 @@ function HomeComponent() {
     const headers = getAuthHeaders();
     if (!headers) return;
 
+    // Tasks
     axios
       .get(`${apiBase}/tasks`, headers)
-      .then((res) => setTasks(res.data))
-      .catch(console.error);
+      .then((res) => setTasks(Array.isArray(res.data) ? res.data : []))
+      .catch(handleTokenError);
 
+    // Friends
     axios
       .get(`${apiBase}/friends`, headers)
-      .then((res) => setFriends(res.data))
-      .catch(console.error);
+      .then((res) => setFriends(Array.isArray(res.data) ? res.data : []))
+      .catch(handleTokenError);
 
+    // Users
     axios
       .get(`${apiBase}/users`, headers)
-      .then((res) => setAllUsers(res.data))
-      .catch((err) => {
-        console.error("Users fetch error:", err);
-        if (err.response?.status === 403) {
-          alert("Session expired or invalid token. Please log in again.");
-        }
-      });
+      .then((res) => setAllUsers(Array.isArray(res.data) ? res.data : []))
+      .catch(handleTokenError);
 
+    // Current User
     axios
       .get(`${apiBase}/user/me`, headers)
-      .then((res) => setCurrentUser(res.data))
-      .catch((err) => {
-        console.error("Current user fetch error:", err);
-        if (err.response?.status === 403) {
-          alert("Session expired or invalid token. Please log in again.");
-        }
-      });
+      .then((res) => setCurrentUser(res.data || {}))
+      .catch(handleTokenError);
 
     fetchFriendRequests();
   }, [fetchFriendRequests]);
@@ -120,12 +120,7 @@ function HomeComponent() {
         setDueDate("");
         setDueTime("");
       })
-      .catch((err) => {
-        console.error("Add task error:", err);
-        if (err.response?.status === 403) {
-          alert("Session expired or invalid token. Please log in again.");
-        }
-      });
+      .catch(handleTokenError);
   };
 
   const deleteTask = (id) => {
@@ -135,7 +130,7 @@ function HomeComponent() {
     axios
       .delete(`${apiBase}/tasks/${id}`, headers)
       .then(() => setTasks(tasks.filter((task) => task._id !== id)))
-      .catch(console.error);
+      .catch(handleTokenError);
   };
 
   // ---------------- FRIEND REQUEST FUNCTIONS ----------------
@@ -149,7 +144,7 @@ function HomeComponent() {
         setSentRequests((prev) => [...prev, userId]);
         showTempNotification(`Friend request sent to ${userName}`);
       })
-      .catch(console.error);
+      .catch(handleTokenError);
   };
 
   const acceptFriendRequest = (fromUserId, fromUser) => {
@@ -164,7 +159,7 @@ function HomeComponent() {
         showTempNotification(`${fromUser.name} is now your friend!`);
         fetchData();
       })
-      .catch(console.error);
+      .catch(handleTokenError);
   };
 
   const declineFriendRequest = (fromUserId, fromUserName) => {
@@ -177,7 +172,7 @@ function HomeComponent() {
         setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId));
         showTempNotification(`Declined friend request from ${fromUserName}`);
       })
-      .catch(console.error);
+      .catch(handleTokenError);
   };
 
   const removeFriend = (friendId, friendName) => {
@@ -196,7 +191,7 @@ function HomeComponent() {
         });
         showTempNotification(`Removed ${friendName} from friends`);
       })
-      .catch(console.error);
+      .catch(handleTokenError);
   };
 
   // ---------------- UTILS ----------------
@@ -211,15 +206,19 @@ function HomeComponent() {
   };
 
   // ---------------- FILTERED USERS ----------------
-  const availableUsers = allUsers.filter(
-    (user) =>
-      user.name?.trim() &&
-      !friends.some((f) => f._id === user._id) &&
-      user._id !== currentUser._id &&
-      !sentRequests.includes(user._id)
-  );
+  const availableUsers = Array.isArray(allUsers)
+    ? allUsers.filter(
+        (user) =>
+          user.name?.trim() &&
+          !friends.some((f) => f._id === user._id) &&
+          user._id !== currentUser._id &&
+          !sentRequests.includes(user._id)
+      )
+    : [];
 
-  const validFriends = friends.filter((friend) => friend.name?.trim());
+  const validFriends = Array.isArray(friends)
+    ? friends.filter((friend) => friend.name?.trim())
+    : [];
 
   // ---------------- RENDER ----------------
   return (
