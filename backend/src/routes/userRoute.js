@@ -1,54 +1,54 @@
 const express = require("express");
 const User = require("../models/User");
+const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET /users → fetch all users
-router.get("/users", async (_req, res) => {
+// ---------------- USERS ----------------
+
+// GET /users → fetch all users (except me)
+router.get("/users", auth, async (req, res) => {
   try {
-    const users = await User.find({}, "name email"); // return only name + email
+    const users = await User.find({ _id: { $ne: req.userId } }, "name email");
     res.json(users);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
-// GET /user/me → placeholder: just return first user
-router.get("/user/me", async (_req, res) => {
+// GET /user/me → get logged-in user
+router.get("/user/me", auth, async (req, res) => {
   try {
-    const user = await User.findOne(); // later: use auth middleware
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      joined: user.createdAt,
-    });
+    const me = await User.findById(req.userId).select("name email createdAt");
+    if (!me) return res.status(404).json({ error: "User not found" });
+    res.json(me);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to fetch user" });
   }
 });
 
-// GET /friends → mock friends (first 3 users)
-router.get("/friends", async (_req, res) => {
+// ---------------- FRIEND SYSTEM ----------------
+
+// GET /friends → list of my friends
+router.get("/friends", auth, async (req, res) => {
   try {
-    const friends = await User.find().limit(3);
-    res.json(friends);
+    const me = await User.findById(req.userId).populate(
+      "friends",
+      "name email"
+    );
+    res.json(me.friends);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to fetch friends" });
   }
 });
 
-// ✅ Friend Requests
-
 // GET /friend-requests/incoming
-router.get("/friend-requests/incoming", async (_req, res) => {
+router.get("/friend-requests/incoming", auth, async (req, res) => {
   try {
-    const me = await User.findOne().populate("friendRequests", "name email");
+    const me = await User.findById(req.userId).populate(
+      "friendRequests",
+      "name email"
+    );
     res.json(me.friendRequests || []);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch incoming requests" });
@@ -56,20 +56,23 @@ router.get("/friend-requests/incoming", async (_req, res) => {
 });
 
 // GET /friend-requests/sent
-router.get("/friend-requests/sent", async (_req, res) => {
+router.get("/friend-requests/sent", auth, async (req, res) => {
   try {
-    const me = await User.findOne().populate("sentRequests", "name email");
+    const me = await User.findById(req.userId).populate(
+      "sentRequests",
+      "name email"
+    );
     res.json(me.sentRequests || []);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch sent requests" });
   }
 });
 
-// POST /friend-requests → send a request
-router.post("/friend-requests", async (req, res) => {
+// POST /friend-requests → send request
+router.post("/friend-requests", auth, async (req, res) => {
   const { toUserId } = req.body;
   try {
-    const me = await User.findOne();
+    const me = await User.findById(req.userId);
     const recipient = await User.findById(toUserId);
     if (!recipient) return res.status(404).json({ error: "User not found" });
 
@@ -90,15 +93,14 @@ router.post("/friend-requests", async (req, res) => {
 });
 
 // POST /friend-requests/accept
-// POST /friend-requests/accept
-router.post("/friend-requests/accept", async (req, res) => {
-  const { fromUserId } = req.body; // ✅ match frontend param
+router.post("/friend-requests/accept", auth, async (req, res) => {
+  const { fromUserId } = req.body;
   try {
-    const me = await User.findOne();
+    const me = await User.findById(req.userId);
     const sender = await User.findById(fromUserId);
     if (!sender) return res.status(404).json({ error: "User not found" });
 
-    // remove pending request
+    // remove from pending
     me.friendRequests = me.friendRequests.filter(
       (id) => id.toString() !== sender._id.toString()
     );
@@ -120,10 +122,10 @@ router.post("/friend-requests/accept", async (req, res) => {
 });
 
 // POST /friend-requests/decline
-router.post("/friend-requests/decline", async (req, res) => {
+router.post("/friend-requests/decline", auth, async (req, res) => {
   const { fromUserId } = req.body;
   try {
-    const me = await User.findOne();
+    const me = await User.findById(req.userId);
     const sender = await User.findById(fromUserId);
     if (!sender) return res.status(404).json({ error: "User not found" });
 
@@ -144,10 +146,10 @@ router.post("/friend-requests/decline", async (req, res) => {
 });
 
 // DELETE /friends/:id → remove friend
-router.delete("/friends/:id", async (req, res) => {
+router.delete("/friends/:id", auth, async (req, res) => {
   const { id } = req.params;
   try {
-    const me = await User.findOne();
+    const me = await User.findById(req.userId);
     const friend = await User.findById(id);
     if (!friend) return res.status(404).json({ error: "Friend not found" });
 
@@ -167,13 +169,12 @@ router.delete("/friends/:id", async (req, res) => {
   }
 });
 
-// GET /groups → mock groups
+// ---------------- GROUPS (placeholder) ----------------
 router.get("/groups", (_req, res) => {
-  const groups = [
+  res.json([
     { _id: "1", name: "Developers" },
     { _id: "2", name: "Designers" },
-  ];
-  res.json(groups);
+  ]);
 });
 
 module.exports = router;
