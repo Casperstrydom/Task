@@ -67,21 +67,31 @@ function HomeComponent() {
     const headers = getAuthHeaders();
     if (!headers) return;
 
+    // Tasks
     axios
       .get(`${apiBase}/tasks`, headers)
-      .then((res) => setTasks(Array.isArray(res.data) ? res.data : []))
+      .then((res) =>
+        setTasks(
+          Array.isArray(res.data)
+            ? res.data.map((t) => ({ ...t, _id: t._id || t.id }))
+            : []
+        )
+      )
       .catch(handleTokenError);
 
+    // Friends
     axios
       .get(`${apiBase}/friends`, headers)
       .then((res) => setFriends(Array.isArray(res.data) ? res.data : []))
       .catch(handleTokenError);
 
+    // Users
     axios
       .get(`${apiBase}/users`, headers)
       .then((res) => setAllUsers(Array.isArray(res.data) ? res.data : []))
       .catch(handleTokenError);
 
+    // Current User
     axios
       .get(`${apiBase}/user/me`, headers)
       .then((res) => setCurrentUser(res.data || {}))
@@ -111,7 +121,8 @@ function HomeComponent() {
     axios
       .post(`${apiBase}/tasks`, taskData, headers)
       .then((res) => {
-        setTasks([...tasks, res.data]);
+        const newTaskItem = { ...res.data, _id: res.data._id || res.data.id };
+        setTasks([...tasks, newTaskItem]);
         setNewTask("");
         setDueDate("");
         setDueTime("");
@@ -120,6 +131,7 @@ function HomeComponent() {
   };
 
   const deleteTask = (id) => {
+    if (!id) return;
     const headers = getAuthHeaders();
     if (!headers) return;
 
@@ -311,9 +323,9 @@ function HomeComponent() {
                   <h3 className="cyber-subtitle">FRIEND REQUESTS</h3>
                   <div className="scroll-container">
                     <ul className="cyber-list">
-                      {incomingRequests.map((req) => (
+                      {incomingRequests.map((req, index) => (
                         <li
-                          key={req._id}
+                          key={req._id || index}
                           className="cyber-list-item request-item"
                         >
                           <span>{req.name}</span>
@@ -344,8 +356,8 @@ function HomeComponent() {
                 <h3 className="cyber-subtitle">USERS</h3>
                 <div className="scroll-container">
                   <ul className="cyber-list">
-                    {availableUsers.map((user) => (
-                      <li key={user._id} className="cyber-list-item">
+                    {availableUsers.map((user, index) => (
+                      <li key={user._id || index} className="cyber-list-item">
                         <span>{user.name}</span>
                         <button
                           onClick={() => sendFriendRequest(user._id, user.name)}
@@ -368,8 +380,8 @@ function HomeComponent() {
                 </h3>
                 <div className="scroll-container">
                   <ul className="cyber-list">
-                    {validFriends.map((friend) => (
-                      <li key={friend._id} className="cyber-list-item">
+                    {validFriends.map((friend, index) => (
+                      <li key={friend._id || index} className="cyber-list-item">
                         <span>{friend.name}</span>
                         <button
                           onClick={() => removeFriend(friend._id, friend.name)}
@@ -423,8 +435,8 @@ function HomeComponent() {
           <div className="cyber-tasks-container scroll-container">
             {sortedTasks.length > 0 ? (
               <ul className="cyber-task-list">
-                {sortedTasks.map((task) => (
-                  <li key={task._id} className="cyber-task-item">
+                {sortedTasks.map((task, index) => (
+                  <li key={task._id || index} className="cyber-task-item">
                     <span>{task.title}</span>
                     {task.dueDate && (
                       <span className="task-date">
