@@ -1,3 +1,4 @@
+// index.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -16,8 +17,10 @@ const app = express();
 
 // ----- CORS CONFIG -----
 const allowedOrigins = [
-  "http://localhost:5174", // Vite dev
+  "http://localhost:5173", // Vite dev
+  "http://localhost:5174", // Another Vite dev port
   "https://task-2-3lr4.onrender.com", // production frontend
+  "https://task-sqtw.onrender.com", // deployed frontend
 ];
 
 app.use(
@@ -26,6 +29,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.error("Blocked by CORS:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -54,12 +58,12 @@ const options = {
   apis: ["./routes/*.js"],
 };
 
+const swaggerSpec = swaggerJsdoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.get("/vapidPublicKey", (_req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
 });
-
-const swaggerSpec = swaggerJsdoc(options);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ----- Push Notifications -----
 webpush.setVapidDetails(
@@ -94,7 +98,7 @@ app.post("/sendNotification", async (req, res) => {
 // ----- ROUTES -----
 app.use("/tasks", taskRoutes);
 app.use("/auth", authRoutes);
-app.use("/", userRoutes); // <-- added user routes
+app.use("/", userRoutes);
 
 // ----- Health & Default Routes -----
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
