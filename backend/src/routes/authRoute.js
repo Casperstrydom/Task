@@ -103,33 +103,32 @@ router.post("/register", async (req, res) => {
  *         description: Invalid credentials
  */
 router.post("/login", async (req, res) => {
+  console.log("JWT_SECRET:", process.env.JWT_SECRET); // debug line
   const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
     if (!user) {
+      console.log("User not found");
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log("Password mismatch");
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // ✅ Generate JWT
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: process.env.JWT_EXPIRES_IN || "1h",
     });
 
-    // Send token along with user info
+    console.log("Login successful for:", email);
+
     res.json({
       message: "Logged in successfully",
-      token, // <--- this is what frontend will store
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      token,
+      user: { _id: user._id, name: user.name, email: user.email },
     });
   } catch (err) {
     console.error("Login error:", err);
