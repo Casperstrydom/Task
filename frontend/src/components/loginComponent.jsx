@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Added for navigation
+import { useNavigate } from "react-router-dom";
 import "../main/index.css";
 
 const Login = ({ onLogin, switchToRegister }) => {
-  const navigate = useNavigate(); // ✅ Navigate after login
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   useEffect(() => {
@@ -23,7 +23,7 @@ const Login = ({ onLogin, switchToRegister }) => {
     e.preventDefault();
 
     try {
-      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+      const apiBase = import.meta.env.VITE_API_BASE;
       const res = await fetch(`${apiBase}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,17 +32,21 @@ const Login = ({ onLogin, switchToRegister }) => {
 
       const data = await res.json();
 
-      // ✅ Error handling: backend failure or missing token
-      if (!res.ok) throw new Error(data.error || "Login failed");
+      if (!res.ok) {
+        throw new Error(
+          data.error || "Login failed. Please check your credentials."
+        );
+      }
 
-      if (data.token) localStorage.setItem("token", data.token); // ✅ JWT storage
-      onLogin(data.user);
+      // Store JWT only if it exists
+      if (data.token) localStorage.setItem("token", data.token);
 
       console.log("Login successful", data.user);
 
-      navigate("/home"); // ✅ Redirect after login
+      onLogin(data.user);
 
-      // Push notifications (can re-enable later if needed)
+      // Navigate to /home
+      navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
       alert(err.message);
