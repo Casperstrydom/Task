@@ -16,7 +16,7 @@ const app = express();
 
 // ----- CORS CONFIG -----
 const allowedOrigins = [
-  "http://localhost:5173", // Vite dev
+  "http://localhost:5174", // Vite dev
   "https://task-2-3lr4.onrender.com", // production frontend
 ];
 
