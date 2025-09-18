@@ -1,4 +1,3 @@
-// index.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -11,29 +10,29 @@ const { subscriptions } = require("./subscriptions");
 
 const taskRoutes = require("./routes/taskRoute");
 const authRoutes = require("./routes/authRoute");
-const userRoutes = require("./routes/userRoute"); // <-- new
+const userRoutes = require("./routes/userRoute");
 
 const app = express();
 
 // ----- CORS CONFIG -----
 const allowedOrigins = [
   "http://localhost:5173", // Vite dev
-  "http://localhost:5174", // Another Vite dev port
   "https://task-2-3lr4.onrender.com", // production frontend
-  "https://task-sqtw.onrender.com", // deployed frontend
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
+      if (!origin) return callback(null, true); // allow tools like Postman
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       } else {
-        console.error("Blocked by CORS:", origin);
-        callback(new Error("Not allowed by CORS"));
+        console.warn("Blocked by CORS:", origin);
+        return callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true,
+    credentials: true, // allow cookies / auth headers
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -58,12 +57,12 @@ const options = {
   apis: ["./routes/*.js"],
 };
 
-const swaggerSpec = swaggerJsdoc(options);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 app.get("/vapidPublicKey", (_req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
 });
+
+const swaggerSpec = swaggerJsdoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ----- Push Notifications -----
 webpush.setVapidDetails(
