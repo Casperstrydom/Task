@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import "../main/index.css";
 
-// Base URL for backend API
 const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 function HomeComponent() {
@@ -25,55 +24,60 @@ function HomeComponent() {
   const [notification, setNotification] = useState(null);
   const [showNotification, setShowNotification] = useState(false);
 
+  const token = localStorage.getItem("token");
+
+  // Memoized headers
+  const authHeaders = useMemo(
+    () => ({ headers: { Authorization: `Bearer ${token}` } }),
+    [token]
+  );
+
   // Fetch friend requests
   const fetchFriendRequests = useCallback(() => {
     axios
-      .get(`${apiBase}/friend-requests/incoming`)
+      .get(`${apiBase}/friend-requests/incoming`, authHeaders)
       .then((res) => setIncomingRequests(res.data))
       .catch(console.error);
 
     axios
-      .get(`${apiBase}/friend-requests/sent`)
-      .then((res) => setSentRequests(res.data.map((u) => u._id))) // store just IDs
+      .get(`${apiBase}/friend-requests/sent`, authHeaders)
+      .then((res) => setSentRequests(res.data.map((u) => u._id)))
       .catch(console.error);
-  }, []);
+  }, [authHeaders]);
 
   // Fetch initial data
   const fetchData = useCallback(() => {
     axios
-      .get(`${apiBase}/tasks`)
+      .get(`${apiBase}/tasks`, authHeaders)
       .then((res) => setTasks(res.data))
       .catch(console.error);
 
     axios
-      .get(`${apiBase}/friends`)
+      .get(`${apiBase}/friends`, authHeaders)
       .then((res) => setFriends(res.data))
       .catch(console.error);
 
     axios
-      .get(`${apiBase}/users`)
+      .get(`${apiBase}/users`, authHeaders)
       .then((res) => setAllUsers(res.data))
       .catch(console.error);
 
     axios
-      .get(`${apiBase}/user/me`)
+      .get(`${apiBase}/user/me`, authHeaders)
       .then((res) => setCurrentUser(res.data))
       .catch(console.error);
 
     fetchFriendRequests();
-  }, [fetchFriendRequests]);
+  }, [authHeaders, fetchFriendRequests]);
 
+  // Load data on mount
   useEffect(() => {
     fetchData();
-
-    const interval = setInterval(() => {
-      fetchFriendRequests();
-    }, 5000);
-
+    const interval = setInterval(fetchFriendRequests, 5000);
     return () => clearInterval(interval);
   }, [fetchData, fetchFriendRequests]);
 
-  // Add new task
+  // Add task
   const addTask = () => {
     if (!newTask.trim()) return;
     const taskData = {
@@ -81,7 +85,7 @@ function HomeComponent() {
       dueDate: dueDate && dueTime ? `${dueDate}T${dueTime}:00.000Z` : null,
     };
     axios
-      .post(`${apiBase}/tasks`, taskData)
+      .post(`${apiBase}/tasks`, taskData, authHeaders)
       .then((res) => {
         setTasks([...tasks, res.data]);
         setNewTask("");
@@ -94,7 +98,7 @@ function HomeComponent() {
   // Delete task
   const deleteTask = (id) => {
     axios
-      .delete(`${apiBase}/tasks/${id}`)
+      .delete(`${apiBase}/tasks/${id}`, authHeaders)
       .then(() => setTasks(tasks.filter((task) => task._id !== id)))
       .catch(console.error);
   };
@@ -102,7 +106,7 @@ function HomeComponent() {
   // Friend request actions
   const sendFriendRequest = (userId, userName) => {
     axios
-      .post(`${apiBase}/friend-requests`, { toUserId: userId })
+      .post(`${apiBase}/friend-requests`, { toUserId: userId }, authHeaders)
       .then(() => {
         setSentRequests((prev) => [...prev, userId]);
         showTempNotification(`Friend request sent to ${userName}`);
@@ -112,7 +116,7 @@ function HomeComponent() {
 
   const acceptFriendRequest = (fromUserId, fromUser) => {
     axios
-      .post(`${apiBase}/friend-requests/accept`, { fromUserId })
+      .post(`${apiBase}/friend-requests/accept`, { fromUserId }, authHeaders)
       .then(() => {
         setFriends((prev) => [...prev, fromUser]);
         setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId));
@@ -124,7 +128,7 @@ function HomeComponent() {
 
   const declineFriendRequest = (fromUserId, fromUserName) => {
     axios
-      .post(`${apiBase}/friend-requests/decline`, { fromUserId })
+      .post(`${apiBase}/friend-requests/decline`, { fromUserId }, authHeaders)
       .then(() => {
         setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId));
         showTempNotification(`Declined friend request from ${fromUserName}`);
@@ -132,41 +136,32 @@ function HomeComponent() {
       .catch(console.error);
   };
 
-  // Remove friend
   const removeFriend = (friendId, friendName) => {
     axios
-      .delete(`${apiBase}/friends/${friendId}`)
+      .delete(`${apiBase}/friends/${friendId}`, authHeaders)
       .then(() => {
         setFriends((prevFriends) => {
           const removedFriend = prevFriends.find((f) => f._id === friendId);
-
-          // ✅ Only add back if we found them
           if (removedFriend) {
             setAllUsers((prevUsers) => [...prevUsers, removedFriend]);
           }
-
-          // ✅ Return filtered list
           return prevFriends.filter((f) => f._id !== friendId);
         });
-
         showTempNotification(`Removed ${friendName} from friends`);
       })
       .catch(console.error);
   };
 
-  // Notifications
   const showTempNotification = (message) => {
     setNotification(message);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
   };
 
-  // Input handler
   const handleKeyPress = (e) => {
     if (e.key === "Enter") addTask();
   };
 
-  // Filters
   const availableUsers = allUsers.filter(
     (user) =>
       user.name?.trim() &&
@@ -176,7 +171,6 @@ function HomeComponent() {
   );
 
   const validFriends = friends.filter((friend) => friend.name?.trim());
-
   return (
     <main className="futuristic-container">
       <div className="cyber-grid"></div>
