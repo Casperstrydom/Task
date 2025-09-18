@@ -17,14 +17,14 @@ const app = express();
 // ----- CORS CONFIG -----
 const allowedOrigins = [
   "http://localhost:5173", // Vite dev
-  "https://task-2-3lr4.onrender.com", // production frontend
+  "https://task-2-3lr4.onrender.com",
+  "https://task-sqtw.onrender.com", // <-- new deployed frontend
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true); // allow tools like Postman
-
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       } else {
@@ -32,7 +32,7 @@ app.use(
         return callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true, // allow cookies / auth headers
+    credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
