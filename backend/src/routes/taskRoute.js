@@ -14,8 +14,13 @@ const router = express.Router();
  *       - Tasks
  */
 router.get("/", async (_req, res) => {
-  const tasks = await Task.find().sort({ createdAt: -1 });
-  res.json(tasks);
+  try {
+    const tasks = await Task.find().sort({ createdAt: -1 });
+    res.json({ success: true, count: tasks.length, tasks });
+  } catch (err) {
+    console.error("Fetch tasks error:", err);
+    res.status(500).json({ success: false, error: "Failed to fetch tasks" });
+  }
 });
 
 /**
@@ -27,28 +32,36 @@ router.get("/", async (_req, res) => {
  *       - Tasks
  */
 router.post("/", async (req, res) => {
-  const { title } = req.body;
-  if (!title || !title.trim())
-    return res.status(400).json({ error: "title is required" });
+  try {
+    const { title } = req.body;
+    if (!title || !title.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Title is required" });
+    }
 
-  const task = await Task.create({ title: title.trim() });
+    const task = await Task.create({ title: title.trim() });
 
-  // ---- 🔔 Send Push Notification ----
-  const payload = JSON.stringify({
-    title: "New Task Created",
-    body: `Task: ${task.title}`,
-    icon: "/icon.png",
-  });
+    // ---- 🔔 Send Push Notification ----
+    const payload = JSON.stringify({
+      title: "New Task Created",
+      body: `Task: ${task.title}`,
+      icon: "/icon.png",
+    });
 
-  const sendPromises = subscriptions.map((sub) =>
-    webpush.sendNotification(sub, payload).catch((err) => {
-      console.error("Push error:", err);
-    })
-  );
+    await Promise.all(
+      subscriptions.map((sub) =>
+        webpush.sendNotification(sub, payload).catch((err) => {
+          console.error("Push error:", err);
+        })
+      )
+    );
 
-  await Promise.all(sendPromises);
-
-  res.status(201).json(task);
+    res.status(201).json({ success: true, task });
+  } catch (err) {
+    console.error("Create task error:", err);
+    res.status(500).json({ success: false, error: "Failed to create task" });
+  }
 });
 
 /**
@@ -60,16 +73,23 @@ router.post("/", async (req, res) => {
  *       - Tasks
  */
 router.patch("/:id", async (req, res) => {
-  const { id } = req.params;
-  const update = {};
-  if (typeof req.body.title === "string") update.title = req.body.title.trim();
-  if (typeof req.body.completed === "boolean")
-    update.completed = req.body.completed;
+  try {
+    const { id } = req.params;
+    const update = {};
+    if (typeof req.body.title === "string")
+      update.title = req.body.title.trim();
+    if (typeof req.body.completed === "boolean")
+      update.completed = req.body.completed;
 
-  const task = await Task.findByIdAndUpdate(id, update, { new: true });
-  if (!task) return res.status(404).json({ error: "not found" });
+    const task = await Task.findByIdAndUpdate(id, update, { new: true });
+    if (!task)
+      return res.status(404).json({ success: false, error: "Task not found" });
 
-  res.json(task);
+    res.json({ success: true, task });
+  } catch (err) {
+    console.error("Update task error:", err);
+    res.status(500).json({ success: false, error: "Failed to update task" });
+  }
 });
 
 /**
@@ -81,33 +101,17 @@ router.patch("/:id", async (req, res) => {
  *       - Tasks
  */
 router.delete("/:id", async (req, res) => {
-  const { id } = req.params;
-  const deleted = await Task.findByIdAndDelete(id);
-  if (!deleted) return res.status(404).json({ error: "not found" });
-  res.status(204).send();
+  try {
+    const { id } = req.params;
+    const deleted = await Task.findByIdAndDelete(id);
+    if (!deleted)
+      return res.status(404).json({ success: false, error: "Task not found" });
+
+    res.json({ success: true, message: "Task deleted" });
+  } catch (err) {
+    console.error("Delete task error:", err);
+    res.status(500).json({ success: false, error: "Failed to delete task" });
+  }
 });
 
 module.exports = router;
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Task:
- *       type: object
- *       required:
- *         - title
- *       properties:
- *         _id:
- *           type: string
- *         title:
- *           type: string
- *         completed:
- *           type: boolean
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- */
