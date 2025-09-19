@@ -1,7 +1,9 @@
 const express = require("express");
 const Task = require("../models/Task");
+const User = require("../models/User");
 const webpush = require("web-push");
 const { subscriptions } = require("../subscriptions"); // shared subscription store
+const auth = require("../middleware/auth"); // make sure you have auth middleware
 
 const router = express.Router();
 
@@ -9,16 +11,19 @@ const router = express.Router();
  * @swagger
  * /tasks:
  *   get:
- *     summary: List all tasks
+ *     summary: List all tasks visible to me and my friends
  *     tags:
  *       - Tasks
  */
-
-// ✅ Get all tasks
-router.get("/", async (_req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
-    // Get all tasks, sorted by newest first
-    const tasks = await Task.find().sort({ createdAt: -1 });
+    const me = await User.findById(req.userId).populate("friends", "_id");
+    const friendIds = me.friends.map((f) => f._id);
+
+    // Fetch tasks where owner is me or one of my friends
+    const tasks = await Task.find({
+      owner: { $in: [req.userId, ...friendIds] },
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -38,43 +43,39 @@ router.get("/", async (_req, res) => {
  * @swagger
  * /tasks:
  *   post:
- *     summary: Create a new task
+ *     summary: Create a new task (only visible to me and my friends)
  *     tags:
  *       - Tasks
  */
-
-// ✅ Create a task
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   try {
     const { title, dueDate } = req.body;
 
-    // Validation
     if (!title || !title.trim()) {
       return res
         .status(400)
         .json({ success: false, error: "Title is required" });
     }
 
-    // Save task in MongoDB
     const task = await Task.create({
       title: title.trim(),
       dueDate: dueDate || null,
       completed: false,
+      owner: req.userId, // 👈 attach owner
     });
 
-    // ---- 🔔 Send Push Notification ----
+    // ---- 🔔 Push Notification (optional) ----
     const payload = JSON.stringify({
       title: "✅ New Task Created",
       body: `Task: ${task.title}`,
       icon: "/icon.png",
     });
 
-    // Prevent duplicate notifications by unique endpoint
+    // Send notifications to unique subscriptions
     const uniqueSubsMap = new Map();
     subscriptions.forEach((sub) => {
-      if (!uniqueSubsMap.has(sub.endpoint)) {
+      if (!uniqueSubsMap.has(sub.endpoint))
         uniqueSubsMap.set(sub.endpoint, sub);
-      }
     });
     const uniqueSubs = Array.from(uniqueSubsMap.values());
 
@@ -86,7 +87,6 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // ✅ Respond with saved task
     res.status(201).json({ success: true, task });
   } catch (err) {
     console.error("Create task error:", err);
@@ -98,13 +98,11 @@ router.post("/", async (req, res) => {
  * @swagger
  * /tasks/{id}:
  *   patch:
- *     summary: Update a task
+ *     summary: Update a task (only owner can update)
  *     tags:
  *       - Tasks
  */
-
-// ✅ Update a task
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const update = {};
@@ -112,33 +110,30 @@ router.patch("/:id", async (req, res) => {
     if (typeof req.body.title === "string" && req.body.title.trim() !== "") {
       update.title = req.body.title.trim();
     }
-
     if (typeof req.body.completed === "boolean") {
       update.completed = req.body.completed;
     }
 
-    const task = await Task.findByIdAndUpdate(id, update, {
-      new: true, // return updated doc
-      runValidators: true, // make sure updates respect schema
-    });
+    // Only allow update if task owner is current user
+    const task = await Task.findOneAndUpdate(
+      { _id: id, owner: req.userId },
+      update,
+      { new: true, runValidators: true }
+    );
 
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        error: "Task not found",
-      });
+      return res
+        .status(404)
+        .json({
+          success: false,
+          error: "Task not found or you don't have permission",
+        });
     }
 
-    res.status(200).json({
-      success: true,
-      task,
-    });
+    res.status(200).json({ success: true, task });
   } catch (err) {
     console.error("Update task error:", err);
-    res.status(500).json({
-      success: false,
-      error: "Failed to update task",
-    });
+    res.status(500).json({ success: false, error: "Failed to update task" });
   }
 });
 
@@ -146,34 +141,36 @@ router.patch("/:id", async (req, res) => {
  * @swagger
  * /tasks/{id}:
  *   delete:
- *     summary: Delete a task
+ *     summary: Delete a task (only owner can delete)
  *     tags:
  *       - Tasks
  */
-// ✅ Delete a task
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedTask = await Task.findByIdAndDelete(id);
+
+    const deletedTask = await Task.findOneAndDelete({
+      _id: id,
+      owner: req.userId,
+    });
 
     if (!deletedTask) {
-      return res.status(404).json({
-        success: false,
-        error: "Task not found",
-      });
+      return res
+        .status(404)
+        .json({
+          success: false,
+          error: "Task not found or you don't have permission",
+        });
     }
 
     res.status(200).json({
       success: true,
       message: "Task deleted successfully",
-      task: deletedTask, // optional: return the deleted task if frontend needs it
+      task: deletedTask,
     });
   } catch (err) {
     console.error("Delete task error:", err);
-    res.status(500).json({
-      success: false,
-      error: "Failed to delete task",
-    });
+    res.status(500).json({ success: false, error: "Failed to delete task" });
   }
 });
 
