@@ -115,8 +115,11 @@ function HomeComponent() {
     axios
       .post(`${apiBase}/tasks`, taskData, headers)
       .then((res) => {
-        const newTaskItem = { ...res.data, _id: res.data._id || res.data.id };
+        // Extract task from the response
+        const newTaskItem = { ...res.data.task, _id: res.data.task._id };
         setTasks((prevTasks) => [...prevTasks, newTaskItem]);
+
+        // Reset input fields
         setNewTask("");
         setDueDate("");
         setDueTime("");
