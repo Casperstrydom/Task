@@ -70,13 +70,7 @@ function HomeComponent() {
     // Tasks
     axios
       .get(`${apiBase}/tasks`, headers)
-      .then((res) =>
-        setTasks(
-          Array.isArray(res.data)
-            ? res.data.map((t) => ({ ...t, _id: t._id || t.id }))
-            : []
-        )
-      )
+      .then((res) => setTasks(Array.isArray(res.data) ? res.data : []))
       .catch(handleTokenError);
 
     // Friends
@@ -108,7 +102,6 @@ function HomeComponent() {
   }, [fetchData, fetchFriendRequests]);
 
   // ---------------- TASK FUNCTIONS ----------------
-  // Add Task
   const addTask = () => {
     if (!newTask.trim()) return;
     const headers = getAuthHeaders();
@@ -123,7 +116,7 @@ function HomeComponent() {
       .post(`${apiBase}/tasks`, taskData, headers)
       .then((res) => {
         const newTaskItem = { ...res.data, _id: res.data._id || res.data.id };
-        setTasks((prevTasks) => [...prevTasks, newTaskItem]); // <-- use functional update
+        setTasks((prevTasks) => [...prevTasks, newTaskItem]);
         setNewTask("");
         setDueDate("");
         setDueTime("");
@@ -131,7 +124,6 @@ function HomeComponent() {
       .catch(handleTokenError);
   };
 
-  // Delete Task
   const deleteTask = (id) => {
     if (!id) return;
     const headers = getAuthHeaders();
@@ -140,7 +132,7 @@ function HomeComponent() {
     axios
       .delete(`${apiBase}/tasks/${id}`, headers)
       .then(() => {
-        setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id)); // <-- functional update
+        setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id));
       })
       .catch(handleTokenError);
   };
