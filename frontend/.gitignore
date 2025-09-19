@@ -2,6 +2,8 @@
 
 # Environment variables
 .env
+.lh/
+
 
 # Logs
 logs
