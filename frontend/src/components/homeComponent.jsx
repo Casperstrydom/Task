@@ -1,14 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import "../main/index.css";
+import { format } from "date-fns";
 
 const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 function HomeComponent() {
+  // ---------------- STATE ----------------
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [dueTime, setDueTime] = useState("");
+  const [dueTime, setDueTime] = useState("12:00 AM");
+  const [dueHour, setDueHour] = useState("12");
+  const [dueMinute, setDueMinute] = useState("00");
+  const [dueAmPm, setDueAmPm] = useState("AM");
   const [friends, setFriends] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -23,14 +28,17 @@ function HomeComponent() {
   const [notification, setNotification] = useState(null);
   const [showNotification, setShowNotification] = useState(false);
 
-  // ---------------- AUTH HEADER HELPER ----------------
+  // ---------------- AUDIO ----------------
+  const bellAudio = useRef(new Audio("/bell.mp3"));
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+
+  // ---------------- AUTH ----------------
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     if (!token) return null;
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  // ---------------- HANDLE TOKEN ERRORS ----------------
   const handleTokenError = (err) => {
     if (err.response?.status === 403) {
       alert("Session expired or invalid token. Please log in again.");
@@ -40,7 +48,24 @@ function HomeComponent() {
     }
   };
 
-  // ---------------- FETCH FRIEND REQUESTS ----------------
+  // ---------------- AUDIO UNLOCK ----------------
+  const unlockAudio = () => {
+    bellAudio.current
+      .play()
+      .then(() => {
+        bellAudio.current.pause();
+        bellAudio.current.currentTime = 0;
+        setAudioUnlocked(true);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    window.addEventListener("click", unlockAudio, { once: true });
+    return () => window.removeEventListener("click", unlockAudio);
+  }, []);
+
+  // ---------------- FRIEND REQUESTS ----------------
   const fetchFriendRequests = useCallback(() => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -67,25 +92,23 @@ function HomeComponent() {
     const headers = getAuthHeaders();
     if (!headers) return;
 
-    // Tasks
     axios
       .get(`${apiBase}/tasks`, headers)
-      .then((res) => setTasks(Array.isArray(res.data) ? res.data : []))
+      .then((res) =>
+        setTasks(Array.isArray(res.data.tasks) ? res.data.tasks : [])
+      )
       .catch(handleTokenError);
 
-    // Friends
     axios
       .get(`${apiBase}/friends`, headers)
       .then((res) => setFriends(Array.isArray(res.data) ? res.data : []))
       .catch(handleTokenError);
 
-    // Users
     axios
       .get(`${apiBase}/users`, headers)
       .then((res) => setAllUsers(Array.isArray(res.data) ? res.data : []))
       .catch(handleTokenError);
 
-    // Current User
     axios
       .get(`${apiBase}/user/me`, headers)
       .then((res) => setCurrentUser(res.data || {}))
@@ -94,7 +117,6 @@ function HomeComponent() {
     fetchFriendRequests();
   }, [fetchFriendRequests]);
 
-  // ---------------- LOAD DATA ON MOUNT ----------------
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchFriendRequests, 5000);
@@ -107,40 +129,42 @@ function HomeComponent() {
     const headers = getAuthHeaders();
     if (!headers) return;
 
+    // Convert AM/PM to 24-hour time string
+    let hour24 = parseInt(dueHour, 10);
+    if (dueAmPm === "PM" && hour24 < 12) hour24 += 12;
+    if (dueAmPm === "AM" && hour24 === 12) hour24 = 0;
+    const time24 = `${hour24.toString().padStart(2, "0")}:${dueMinute}`;
+
     const taskData = {
       title: newTask,
-      dueDate: dueDate && dueTime ? `${dueDate}T${dueTime}:00.000Z` : null,
+      dueDate: dueDate && dueHour ? `${dueDate}T${time24}:00` : null,
     };
 
     axios
       .post(`${apiBase}/tasks`, taskData, headers)
       .then((res) => {
-        // Extract task from the response
-        const newTaskItem = { ...res.data.task, _id: res.data.task._id };
-        setTasks((prevTasks) => [...prevTasks, newTaskItem]);
-
-        // Reset input fields
+        const newTaskItem = { ...res.data.task, alerted: false };
+        setTasks((prev) => [...prev, newTaskItem]);
         setNewTask("");
         setDueDate("");
-        setDueTime("");
+        setDueHour("12");
+        setDueMinute("00");
+        setDueAmPm("AM");
       })
       .catch(handleTokenError);
   };
 
   const deleteTask = (id) => {
-    if (!id) return;
     const headers = getAuthHeaders();
     if (!headers) return;
 
     axios
       .delete(`${apiBase}/tasks/${id}`, headers)
-      .then(() => {
-        setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id));
-      })
+      .then(() => setTasks((prev) => prev.filter((t) => t._id !== id)))
       .catch(handleTokenError);
   };
 
-  // ---------------- FRIEND REQUEST FUNCTIONS ----------------
+  // ---------------- FRIEND FUNCTIONS ----------------
   const sendFriendRequest = (userId, userName) => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -169,16 +193,15 @@ function HomeComponent() {
       .catch(handleTokenError);
   };
 
-  const declineFriendRequest = (fromUserId, fromUserName) => {
+  const declineFriendRequest = (fromUserId) => {
     const headers = getAuthHeaders();
     if (!headers) return;
 
     axios
       .post(`${apiBase}/friend-requests/decline`, { fromUserId }, headers)
-      .then(() => {
-        setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId));
-        showTempNotification(`Declined friend request from ${fromUserName}`);
-      })
+      .then(() =>
+        setIncomingRequests((prev) => prev.filter((r) => r._id !== fromUserId))
+      )
       .catch(handleTokenError);
   };
 
@@ -189,19 +212,18 @@ function HomeComponent() {
     axios
       .delete(`${apiBase}/friends/${friendId}`, headers)
       .then(() => {
-        setFriends((prevFriends) => {
-          const removedFriend = prevFriends.find((f) => f._id === friendId);
-          if (removedFriend) {
+        setFriends((prev) => {
+          const removedFriend = prev.find((f) => f._id === friendId);
+          if (removedFriend)
             setAllUsers((prevUsers) => [...prevUsers, removedFriend]);
-          }
-          return prevFriends.filter((f) => f._id !== friendId);
+          return prev.filter((f) => f._id !== friendId);
         });
         showTempNotification(`Removed ${friendName} from friends`);
       })
       .catch(handleTokenError);
   };
 
-  // ---------------- UTILS ----------------
+  // ---------------- UTIL ----------------
   const showTempNotification = (message) => {
     setNotification(message);
     setShowNotification(true);
@@ -213,19 +235,15 @@ function HomeComponent() {
   };
 
   // ---------------- FILTERED USERS ----------------
-  const availableUsers = Array.isArray(allUsers)
-    ? allUsers.filter(
-        (user) =>
-          user.name?.trim() &&
-          !friends.some((f) => f._id === user._id) &&
-          user._id !== currentUser._id &&
-          !sentRequests.includes(user._id)
-      )
-    : [];
+  const availableUsers = allUsers.filter(
+    (user) =>
+      user.name?.trim() &&
+      !friends.some((f) => f._id === user._id) &&
+      user._id !== currentUser._id &&
+      !sentRequests.includes(user._id)
+  );
 
-  const validFriends = Array.isArray(friends)
-    ? friends.filter((friend) => friend.name?.trim())
-    : [];
+  const validFriends = friends.filter((friend) => friend.name?.trim());
 
   // ---------------- SORTED TASKS ----------------
   const sortedTasks = [...tasks].sort((a, b) => {
@@ -234,9 +252,32 @@ function HomeComponent() {
     return new Date(a.dueDate) - new Date(b.dueDate);
   });
 
+  // ---------------- TASK ALERTS & AUDIO ----------------
+  useEffect(() => {
+    if (!tasks.length) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => {
+          if (task.dueDate && !task.alerted) {
+            const taskTime = new Date(task.dueDate);
+            if (now >= taskTime) {
+              if (audioUnlocked) bellAudio.current.play().catch(() => {});
+              showTempNotification(`Task "${task.title}" is due!`);
+              return { ...task, alerted: true };
+            }
+          }
+          return task;
+        })
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [tasks, audioUnlocked]);
+
   // ---------------- RENDER ----------------
   return (
     <main className="futuristic-container">
+      {/* --- GLOWING ORBS & NOTIFICATIONS --- */}
       <div className="cyber-grid"></div>
       <div className="glowing-orbs">
         <div className="orb orb-1"></div>
@@ -260,6 +301,7 @@ function HomeComponent() {
       )}
 
       <div className="app-wrapper">
+        {/* --- SIDEBAR --- */}
         <aside className="cyber-sidebar">
           <div className="sidebar-header">
             <h2 className="neon-text">CONNECTIONS</h2>
@@ -317,14 +359,15 @@ function HomeComponent() {
             </div>
           ) : (
             <>
+              {/* FRIEND REQUESTS */}
               {incomingRequests.length > 0 && (
                 <div className="cyber-list-section">
                   <h3 className="cyber-subtitle">FRIEND REQUESTS</h3>
                   <div className="scroll-container">
                     <ul className="cyber-list">
-                      {incomingRequests.map((req, index) => (
+                      {incomingRequests.map((req, i) => (
                         <li
-                          key={req._id || index}
+                          key={req._id || i}
                           className="cyber-list-item request-item"
                         >
                           <span>{req.name}</span>
@@ -336,9 +379,7 @@ function HomeComponent() {
                               ✔
                             </button>
                             <button
-                              onClick={() =>
-                                declineFriendRequest(req._id, req.name)
-                              }
+                              onClick={() => declineFriendRequest(req._id)}
                               className="decline-friend-btn"
                             >
                               ✖
@@ -351,12 +392,13 @@ function HomeComponent() {
                 </div>
               )}
 
+              {/* USERS */}
               <div className="cyber-list-section">
                 <h3 className="cyber-subtitle">USERS</h3>
                 <div className="scroll-container">
                   <ul className="cyber-list">
-                    {availableUsers.map((user, index) => (
-                      <li key={user._id || index} className="cyber-list-item">
+                    {availableUsers.map((user, i) => (
+                      <li key={user._id || i} className="cyber-list-item">
                         <span>{user.name}</span>
                         <button
                           onClick={() => sendFriendRequest(user._id, user.name)}
@@ -373,14 +415,15 @@ function HomeComponent() {
                 </div>
               </div>
 
+              {/* FRIENDS */}
               <div className="cyber-list-section">
                 <h3 className="cyber-subtitle">
                   FRIENDS ({validFriends.length})
                 </h3>
                 <div className="scroll-container">
                   <ul className="cyber-list">
-                    {validFriends.map((friend, index) => (
-                      <li key={friend._id || index} className="cyber-list-item">
+                    {validFriends.map((friend, i) => (
+                      <li key={friend._id || i} className="cyber-list-item">
                         <span>{friend.name}</span>
                         <button
                           onClick={() => removeFriend(friend._id, friend.name)}
@@ -397,6 +440,7 @@ function HomeComponent() {
           )}
         </aside>
 
+        {/* --- MAIN TASK SECTION --- */}
         <section className="cyber-main">
           <div className="main-header">
             <h1 className="cyber-title">
@@ -434,20 +478,25 @@ function HomeComponent() {
           <div className="cyber-tasks-container scroll-container">
             {sortedTasks.length > 0 ? (
               <ul className="cyber-task-list">
-                {sortedTasks.map((task, index) => (
-                  <li key={task._id || index} className="cyber-task-item">
-                    <span>{task.title}</span>
+                {sortedTasks.map((task, i) => (
+                  <li key={task._id || i} className="cyber-task-item">
+                    <span>
+                      {task.owner === currentUser._id ? "" : "👥 "} {task.title}
+                    </span>
                     {task.dueDate && (
                       <span className="task-date">
-                        ⏰ {new Date(task.dueDate).toLocaleString()}
+                        ⏰{" "}
+                        {format(new Date(task.dueDate), "MM/dd/yyyy, hh:mm a")}
                       </span>
                     )}
-                    <button
-                      onClick={() => deleteTask(task._id)}
-                      className="cyber-delete-btn"
-                    >
-                      ✖
-                    </button>
+                    {task.owner === currentUser._id && (
+                      <button
+                        onClick={() => deleteTask(task._id)}
+                        className="cyber-delete-btn"
+                      >
+                        ✖
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
