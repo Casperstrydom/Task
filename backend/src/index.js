@@ -14,36 +14,31 @@ const userRoutes = require("./routes/userRoute");
 const app = express();
 
 // ----------------- Allowed Origins -----------------
-const allowedOrigins = [
-  "http://localhost:5173", // local dev
-  process.env.FRONTEND_URL, // Amplify frontend
-].filter(Boolean);
-
-// ----------------- Middleware: JSON Parsing -----------------
-app.use(express.json());
-
-// ----------------- Middleware: CORS with logging -----------------
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   console.log("🌍 Incoming request:", req.method, req.url, "Origin:", origin);
-  console.log("📥 Request headers:", req.headers);
-  console.log("📦 Request body:", req.body);
 
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  // Always set CORS headers for allowed origins
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      origin || "*" // fallback for no origin (like Postman)
+    );
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader(
       "Access-Control-Allow-Methods",
       "GET,POST,PUT,PATCH,DELETE,OPTIONS"
     );
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
-    console.log("✅ CORS headers set for", origin);
-  } else if (origin) {
+    console.log("✅ CORS headers set");
+  } else {
     console.warn("❌ Blocked by CORS:", origin);
   }
 
+  // Preflight requests always return 200
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200); // Preflight
+    console.log("⚡ Preflight request handled");
+    return res.sendStatus(200);
   }
 
   next();
