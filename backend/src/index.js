@@ -20,7 +20,6 @@ const allowedOrigins = [
   process.env.FRONTEND_URL, // Amplify frontend
 ].filter(Boolean);
 
-// Use cors middleware (automatic preflight handling)
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -29,11 +28,15 @@ app.use(
         return callback(null, true);
       }
       console.warn("❌ Blocked by CORS:", origin);
-      return callback(new Error("Not allowed by CORS"));
+
+      // ❌ Before: callback(new Error("Not allowed by CORS"));
+      // ✅ After: fail gracefully so OPTIONS doesn't throw 500
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200, // 👈 ensures OPTIONS replies with 200 instead of 500
   })
 );
 
