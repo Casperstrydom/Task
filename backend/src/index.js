@@ -17,32 +17,27 @@ const app = express();
 // ----- CORS CONFIG -----
 const allowedOrigins = [
   "http://localhost:5173", // Dev
-  process.env.FRONTEND_URL, // ✅ Amplify frontend from .env
-];
-
-// Add backend URLs if set
-if (process.env.RENDER_EXTERNAL_URL) {
-  allowedOrigins.push(process.env.RENDER_EXTERNAL_URL);
-}
-if (process.env.AWS_APP_RUNNER_URL) {
-  allowedOrigins.push(process.env.AWS_APP_RUNNER_URL);
-}
+  process.env.FRONTEND_URL, // Amplify frontend
+].filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
+      // Allow requests with no origin (Postman, curl, server-to-server)
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
-      } else {
-        console.warn("❌ Blocked by CORS:", origin);
-        return callback(new Error("Not allowed by CORS"));
       }
+      console.warn("❌ Blocked by CORS:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Handle preflight OPTIONS requests globally
+app.options("*", cors());
 
 // ----- JSON Parsing -----
 app.use(express.json());
@@ -55,7 +50,7 @@ const swaggerOptions = {
     servers: [
       {
         url:
-          process.env.AWS_APP_RUNNER_URL || // ✅ AWS backend
+          process.env.AWS_APP_RUNNER_URL || // AWS backend
           process.env.RENDER_EXTERNAL_URL || // Optional Render backend
           `http://localhost:${process.env.PORT || 5000}`, // Local dev
       },
