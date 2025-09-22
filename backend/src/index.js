@@ -20,29 +20,27 @@ const allowedOrigins = [
   process.env.FRONTEND_URL, // Amplify frontend
 ].filter(Boolean);
 
-app.use((req, res, next) => {
-  console.log("🌍 Incoming request Origin:", req.headers.origin);
-  next();
-});
-
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // Allow Postman / server-to-server
+      // Allow requests like Postman (no origin)
+      if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+
       console.warn("❌ Blocked by CORS:", origin);
-      return callback(null, false); // Don’t throw 500, just reject
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200, // ✅ Preflight always OK
+    optionsSuccessStatus: 200,
   })
 );
 
-// Explicitly handle OPTIONS for all routes
+// Explicitly handle OPTIONS preflight requests
 app.options(/.*/, cors());
 
 // ----------------- JSON Parsing -----------------
@@ -65,8 +63,11 @@ const swaggerOptions = {
   apis: ["./routes/*.js"],
 };
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerJsdoc(swaggerOptions))
+);
 
 // ----------------- VAPID Public Key -----------------
 app.get("/vapidPublicKey", (_req, res) => {
@@ -81,8 +82,7 @@ webpush.setVapidDetails(
 );
 
 app.post("/subscribe", (req, res) => {
-  const subscription = req.body;
-  subscriptions.push(subscription);
+  subscriptions.push(req.body);
   res.status(201).json({ message: "Subscribed successfully" });
 });
 
