@@ -1,0 +1,42 @@
+{
+    "sourceFile": "backend/src/models/User.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 6,
+            "patches": [
+                {
+                    "date": 1757315404001,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757673503639,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,10 +1,12 @@\n const mongoose = require(\"mongoose\");\r\n \r\n const UserSchema = new mongoose.Schema(\r\n   {\r\n+    name: { type: String, required: true }, // <-- added\r\n     email: { type: String, required: true, unique: true, trim: true },\r\n     password: { type: String, required: true },\r\n+    cofirmpassword: { type: String, required: true }, // <-- added\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n"
+                },
+                {
+                    "date": 1757673800525,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,11 @@\n const mongoose = require(\"mongoose\");\r\n \r\n const UserSchema = new mongoose.Schema(\r\n   {\r\n-    name: { type: String, required: true }, // <-- added\r\n+    name: { type: String, required: true },\r\n     email: { type: String, required: true, unique: true, trim: true },\r\n     password: { type: String, required: true },\r\n-    cofirmpassword: { type: String, required: true }, // <-- added\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n"
+                },
+                {
+                    "date": 1757674491725,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n   {\r\n     name: { type: String, required: true },\r\n     email: { type: String, required: true, unique: true, trim: true },\r\n     password: { type: String, required: true },\r\n+    confirmPassword: { type: String, required: true }, // fixed typo\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n"
+                },
+                {
+                    "date": 1757674733895,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,12 @@\n+// models/User.js\r\n const mongoose = require(\"mongoose\");\r\n \r\n const UserSchema = new mongoose.Schema(\r\n   {\r\n     name: { type: String, required: true },\r\n     email: { type: String, required: true, unique: true, trim: true },\r\n-    password: { type: String, required: true },\r\n-    confirmPassword: { type: String, required: true }, // fixed typo\r\n+    password: { type: String, required: true }, // only store the hashed password\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n"
+                },
+                {
+                    "date": 1757966676113,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,16 @@\n-// models/User.js\r\n const mongoose = require(\"mongoose\");\r\n \r\n const UserSchema = new mongoose.Schema(\r\n   {\r\n     name: { type: String, required: true },\r\n     email: { type: String, required: true, unique: true, trim: true },\r\n-    password: { type: String, required: true }, // only store the hashed password\r\n+    password: { type: String, required: true }, // only store hashed password\r\n+\r\n+    // ✅ New fields\r\n+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }],\r\n+    friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // incoming\r\n+    sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }],   // outgoing\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n"
+                },
+                {
+                    "date": 1758176574215,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,13 +1,14 @@\n+// models/User.js\r\n const mongoose = require(\"mongoose\");\r\n \r\n const UserSchema = new mongoose.Schema(\r\n   {\r\n     name: { type: String, required: true },\r\n     email: { type: String, required: true, unique: true, trim: true },\r\n-    password: { type: String, required: true }, // only store hashed password\r\n+    password: { type: String, required: true }, // store hashed password\r\n \r\n-    // ✅ New fields\r\n+    // Friend system\r\n     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }],\r\n     friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // incoming\r\n     sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // outgoing\r\n   },\r\n"
+                }
+            ],
+            "date": 1757315404001,
+            "name": "Commit-0",
+            "content": "const mongoose = require(\"mongoose\");\r\n\r\nconst UserSchema = new mongoose.Schema(\r\n  {\r\n    email: { type: String, required: true, unique: true, trim: true },\r\n    password: { type: String, required: true },\r\n  },\r\n  { timestamps: true }\r\n);\r\n\r\nmodule.exports = mongoose.model(\"User\", UserSchema);\r\n"
+        }
+    ]
+}
