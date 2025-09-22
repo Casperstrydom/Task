@@ -36,9 +36,6 @@ app.use(
   })
 );
 
-// Handle preflight OPTIONS requests globally
-app.options("*", cors());
-
 // ----- JSON Parsing -----
 app.use(express.json());
 
