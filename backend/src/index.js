@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const webpush = require("web-push");
@@ -19,27 +20,22 @@ const allowedOrigins = [
   process.env.FRONTEND_URL, // Amplify frontend
 ].filter(Boolean);
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (!origin || allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin || "*");
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PATCH, DELETE, OPTIONS"
-    );
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  } else {
-    console.warn("❌ Blocked by CORS:", origin);
-  }
-
-  // Handle preflight
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-
-  next();
-});
+// Use cors middleware (automatic preflight handling)
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // Postman / server requests
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.warn("❌ Blocked by CORS:", origin);
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // ----- JSON Parsing -----
 app.use(express.json());
