@@ -10,10 +10,7 @@ function HomeComponent() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [dueTime, setDueTime] = useState("12:00 AM");
-  const [dueHour, setDueHour] = useState("12");
-  const [dueMinute, setDueMinute] = useState("00");
-  const [dueAmPm, setDueAmPm] = useState("AM");
+  const [dueTime, setDueTime] = useState("12:00"); // ✅ 24-hour format only
   const [friends, setFriends] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -129,15 +126,9 @@ function HomeComponent() {
     const headers = getAuthHeaders();
     if (!headers) return;
 
-    // Convert AM/PM to 24-hour time string
-    let hour24 = parseInt(dueHour, 10);
-    if (dueAmPm === "PM" && hour24 < 12) hour24 += 12;
-    if (dueAmPm === "AM" && hour24 === 12) hour24 = 0;
-    const time24 = `${hour24.toString().padStart(2, "0")}:${dueMinute}`;
-
     const taskData = {
       title: newTask,
-      dueDate: dueDate && dueHour ? `${dueDate}T${time24}:00` : null,
+      dueDate: dueDate && dueTime ? `${dueDate}T${dueTime}:00` : null,
     };
 
     axios
@@ -147,9 +138,7 @@ function HomeComponent() {
         setTasks((prev) => [...prev, newTaskItem]);
         setNewTask("");
         setDueDate("");
-        setDueHour("12");
-        setDueMinute("00");
-        setDueAmPm("AM");
+        setDueTime("12:00"); // reset correctly
       })
       .catch(handleTokenError);
   };
