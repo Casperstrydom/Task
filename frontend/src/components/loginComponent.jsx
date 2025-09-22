@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import "../main/index.css";
 
-const LoginComponent = ({ onLogin, switchToRegister }) => {
+const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
+const LoginComponent = ({ switchToRegister }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
 
   // Request Notification permission once
   useEffect(() => {
@@ -18,10 +22,36 @@ const LoginComponent = ({ onLogin, switchToRegister }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Call parent onLogin with form data
-    onLogin(formData);
+    setLoading(true);
+
+    try {
+      const res = await axios.post(
+        `${apiBase}/auth/login`,
+        {
+          email: formData.email,
+          password: formData.password,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (res.status === 200) {
+        if (res.data.token) localStorage.setItem("token", res.data.token);
+        // Redirect to /home
+        window.location.href = "/home"; // Or use navigate("/home") if using React Router
+      }
+    } catch (err) {
+      console.error("❌ Login failed:", err);
+      alert(
+        err.response?.data?.message ||
+          "Login failed. Please check your credentials and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,9 +119,12 @@ const LoginComponent = ({ onLogin, switchToRegister }) => {
             <button
               type="submit"
               className="cyber-button cyber-button-primary full-width"
+              disabled={loading}
             >
               <span className="cyber-button-glitch">⟳</span>
-              <span className="cyber-button-text">ACCESS SYSTEM</span>
+              <span className="cyber-button-text">
+                {loading ? "ACCESSING..." : "ACCESS SYSTEM"}
+              </span>
             </button>
 
             <div className="auth-switch">
