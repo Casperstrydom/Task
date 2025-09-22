@@ -14,36 +14,41 @@ const userRoutes = require("./routes/userRoute");
 
 const app = express();
 
-// ----- CORS CONFIG -----
+// ----------------- CORS CONFIG -----------------
 const allowedOrigins = [
-  "http://localhost:5173", // Dev
+  "http://localhost:5173", // local dev
   process.env.FRONTEND_URL, // Amplify frontend
 ].filter(Boolean);
+
+app.use((req, res, next) => {
+  console.log("🌍 Incoming request Origin:", req.headers.origin);
+  next();
+});
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // Postman / server requests
+      if (!origin) return callback(null, true); // Allow Postman / server-to-server
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
       console.warn("❌ Blocked by CORS:", origin);
-
-      // ❌ Before: callback(new Error("Not allowed by CORS"));
-      // ✅ After: fail gracefully so OPTIONS doesn't throw 500
-      return callback(null, false);
+      return callback(null, false); // Don’t throw 500, just reject
     },
     credentials: true,
-    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200, // 👈 ensures OPTIONS replies with 200 instead of 500
+    optionsSuccessStatus: 200, // ✅ Preflight always OK
   })
 );
 
-// ----- JSON Parsing -----
+// Explicitly handle OPTIONS for all routes
+app.options(/.*/, cors());
+
+// ----------------- JSON Parsing -----------------
 app.use(express.json());
 
-// ----- Swagger -----
+// ----------------- Swagger -----------------
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
@@ -51,9 +56,9 @@ const swaggerOptions = {
     servers: [
       {
         url:
-          process.env.AWS_APP_RUNNER_URL || // AWS backend
-          process.env.RENDER_EXTERNAL_URL || // Optional Render backend
-          `http://localhost:${process.env.PORT || 5000}`, // Local dev
+          process.env.AWS_APP_RUNNER_URL ||
+          process.env.RENDER_EXTERNAL_URL ||
+          `http://localhost:${process.env.PORT || 5000}`,
       },
     ],
   },
@@ -63,12 +68,12 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// ----- VAPID Public Key Endpoint -----
+// ----------------- VAPID Public Key -----------------
 app.get("/vapidPublicKey", (_req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
 });
 
-// ----- Push Notifications -----
+// ----------------- Push Notifications -----------------
 webpush.setVapidDetails(
   "mailto:your@email.com",
   process.env.VAPID_PUBLIC_KEY,
@@ -98,16 +103,16 @@ app.post("/sendNotification", async (req, res) => {
   res.json({ message: "Notifications sent" });
 });
 
-// ----- ROUTES -----
+// ----------------- ROUTES -----------------
 app.use("/tasks", taskRoutes);
 app.use("/auth", authRoutes);
 app.use("/", userRoutes);
 
-// ----- Health & Default Routes -----
+// ----------------- Health & Default -----------------
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 app.get("/", (_req, res) => res.send("Hello, Task Manager API!"));
 
-// ----- MongoDB Connection -----
+// ----------------- MongoDB Connection -----------------
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
