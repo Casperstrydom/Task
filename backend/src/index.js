@@ -14,34 +14,30 @@ const userRoutes = require("./routes/userRoute");
 
 const app = express();
 
-// Explicitly handle OPTIONS preflight requests
-app.options(/.*/, cors());
-
-// ----------------- CORS CONFIG -----------------
 const allowedOrigins = [
   "http://localhost:5173", // local dev
   process.env.FRONTEND_URL, // Amplify frontend
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests like Postman (no origin)
-      if (!origin) return callback(null, true);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    );
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  }
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+  // Preflight
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
 
-      console.warn("❌ Blocked by CORS:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200,
-  })
-);
+  next();
+});
 
 // ----------------- Swagger -----------------
 const swaggerOptions = {
