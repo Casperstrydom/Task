@@ -14,6 +14,9 @@ const userRoutes = require("./routes/userRoute");
 
 const app = express();
 
+// Explicitly handle OPTIONS preflight requests
+app.options(/.*/, cors());
+
 // ----------------- CORS CONFIG -----------------
 const allowedOrigins = [
   "http://localhost:5173", // local dev
@@ -39,12 +42,6 @@ app.use(
     optionsSuccessStatus: 200,
   })
 );
-
-// Explicitly handle OPTIONS preflight requests
-app.options(/.*/, cors());
-
-// ----------------- JSON Parsing -----------------
-app.use(express.json());
 
 // ----------------- Swagger -----------------
 const swaggerOptions = {
