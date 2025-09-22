@@ -1,6 +1,5 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const webpush = require("web-push");
@@ -14,13 +13,22 @@ const userRoutes = require("./routes/userRoute");
 
 const app = express();
 
+// ----------------- Allowed Origins -----------------
 const allowedOrigins = [
   "http://localhost:5173", // local dev
   process.env.FRONTEND_URL, // Amplify frontend
 ].filter(Boolean);
 
+// ----------------- Middleware: JSON Parsing -----------------
+app.use(express.json());
+
+// ----------------- Middleware: CORS with logging -----------------
 app.use((req, res, next) => {
   const origin = req.headers.origin;
+  console.log("🌍 Incoming request:", req.method, req.url, "Origin:", origin);
+  console.log("📥 Request headers:", req.headers);
+  console.log("📦 Request body:", req.body);
+
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -29,11 +37,13 @@ app.use((req, res, next) => {
       "GET,POST,PUT,PATCH,DELETE,OPTIONS"
     );
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+    console.log("✅ CORS headers set for", origin);
+  } else if (origin) {
+    console.warn("❌ Blocked by CORS:", origin);
   }
 
-  // Preflight
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
+    return res.sendStatus(200); // Preflight
   }
 
   next();
@@ -55,7 +65,6 @@ const swaggerOptions = {
   },
   apis: ["./routes/*.js"],
 };
-
 app.use(
   "/api-docs",
   swaggerUi.serve,
@@ -64,6 +73,7 @@ app.use(
 
 // ----------------- VAPID Public Key -----------------
 app.get("/vapidPublicKey", (_req, res) => {
+  console.log("🔑 VAPID public key requested");
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
 });
 
@@ -75,11 +85,13 @@ webpush.setVapidDetails(
 );
 
 app.post("/subscribe", (req, res) => {
+  console.log("📨 New subscription request:", req.body);
   subscriptions.push(req.body);
   res.status(201).json({ message: "Subscribed successfully" });
 });
 
 app.post("/sendNotification", async (req, res) => {
+  console.log("📣 Sending push notification:", req.body);
   const { title, body } = req.body;
   const payload = JSON.stringify({
     title: title || "Task Update",
@@ -89,7 +101,9 @@ app.post("/sendNotification", async (req, res) => {
 
   await Promise.all(
     subscriptions.map((sub) =>
-      webpush.sendNotification(sub, payload).catch(console.error)
+      webpush.sendNotification(sub, payload).catch((err) => {
+        console.error("❌ Push failed for subscription:", sub, err);
+      })
     )
   );
 
