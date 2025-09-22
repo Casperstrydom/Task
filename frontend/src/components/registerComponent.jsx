@@ -1,7 +1,10 @@
 import { useState } from "react";
+import axios from "axios";
 import "../main/index.css";
 
-const RegisterComponent = ({ onRegister, switchToLogin }) => {
+const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
+const RegisterComponent = ({ switchToLogin }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -9,19 +12,51 @@ const RegisterComponent = ({ onRegister, switchToLogin }) => {
     confirmPassword: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match!");
       return;
     }
-    // Call parent onRegister with form data
-    onRegister(formData);
+
+    setLoading(true);
+    try {
+      const res = await axios.post(
+        `${apiBase}/auth/register`,
+        {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (res.status === 201) {
+        // If your backend sends a token
+        if (res.data.token) localStorage.setItem("token", res.data.token);
+
+        // Redirect to /home
+        window.location.href = "/home"; // Or use navigate("/home") if using React Router
+      }
+    } catch (err) {
+      console.error("❌ Registration failed:", err);
+      alert(
+        err.response?.data?.message ||
+          "Registration failed. Please try again later."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -109,9 +144,12 @@ const RegisterComponent = ({ onRegister, switchToLogin }) => {
             <button
               type="submit"
               className="cyber-button cyber-button-primary full-width"
+              disabled={loading}
             >
               <span className="cyber-button-glitch">⊕</span>
-              <span className="cyber-button-text">CREATE IDENTITY</span>
+              <span className="cyber-button-text">
+                {loading ? "CREATING..." : "CREATE IDENTITY"}
+              </span>
             </button>
 
             <div className="auth-switch">
