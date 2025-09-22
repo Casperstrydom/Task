@@ -17,13 +17,15 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    // Optional: Service Worker (disable on Amplify unless sw.js exists)
+    if ("serviceWorker" in navigator && "PushManager" in window) {
       navigator.serviceWorker
         .register("/sw.js")
         .then(() => console.log("✅ Service Worker registered"))
         .catch((err) => console.error("❌ SW registration failed:", err));
     }
 
+    // Subscribe user to push notifications if supported
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
@@ -39,6 +41,7 @@ function App() {
           ),
         });
 
+        // Send subscription to backend
         await axios.post(`${apiBase}/subscribe`, subscription);
         console.log("✅ Subscribed for push notifications");
       } catch (err) {
@@ -61,9 +64,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Default route */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-
         <Route path="/home" element={<Home currentUser={currentUser} />} />
         <Route
           path="/login"
@@ -78,17 +79,28 @@ function App() {
   );
 }
 
+// ---------------- Login Wrapper ----------------
 function LoginWrapper({ setCurrentUser }) {
   const navigate = useNavigate();
 
-  const handleLogin = (loginData) => {
-    const loggedUser = {
-      name: "Logged User",
-      email: loginData.email,
-      joined: new Date().toISOString(),
-    };
-    setCurrentUser(loggedUser);
-    navigate("/home");
+  const handleLogin = async (loginData) => {
+    try {
+      // Example real backend call (uncomment when backend is ready)
+      // const response = await axios.post(`${apiBase}/auth/login`, loginData);
+      // setCurrentUser(response.data.user);
+
+      // Temporary mock user
+      const loggedUser = {
+        name: "Logged User",
+        email: loginData.email,
+        joined: new Date().toISOString(),
+      };
+      setCurrentUser(loggedUser);
+      navigate("/home");
+    } catch (err) {
+      console.error("❌ Login failed:", err);
+      alert("Login failed. Check console for details.");
+    }
   };
 
   return (
@@ -99,17 +111,28 @@ function LoginWrapper({ setCurrentUser }) {
   );
 }
 
+// ---------------- Register Wrapper ----------------
 function RegisterWrapper({ setCurrentUser }) {
   const navigate = useNavigate();
 
-  const handleRegister = (formData) => {
-    const newUser = {
-      name: formData.name,
-      email: formData.email,
-      joined: new Date().toISOString(),
-    };
-    setCurrentUser(newUser);
-    navigate("/home");
+  const handleRegister = async (formData) => {
+    try {
+      // Example real backend call (uncomment when backend is ready)
+      // const response = await axios.post(`${apiBase}/auth/register`, formData);
+      // setCurrentUser(response.data.user);
+
+      // Temporary mock user
+      const newUser = {
+        name: formData.name,
+        email: formData.email,
+        joined: new Date().toISOString(),
+      };
+      setCurrentUser(newUser);
+      navigate("/home");
+    } catch (err) {
+      console.error("❌ Registration failed:", err);
+      alert("Registration failed. Check console for details.");
+    }
   };
 
   return (
