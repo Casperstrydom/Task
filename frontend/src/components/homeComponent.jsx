@@ -24,6 +24,9 @@ function HomeComponent() {
   const [sentRequests, setSentRequests] = useState([]);
   const [notification, setNotification] = useState(null);
   const [showNotification, setShowNotification] = useState(false);
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
+  const [customDate, setCustomDate] = useState(new Date());
+  const [customTime, setCustomTime] = useState("12:00");
 
   // ---------------- AUDIO ----------------
   const bellAudio = useRef(new Audio("/bell.mp3"));
@@ -124,6 +127,38 @@ function HomeComponent() {
     const interval = setInterval(fetchFriendRequests, 5000);
     return () => clearInterval(interval);
   }, [fetchData, fetchFriendRequests]);
+
+  // ---------------- DATE/TIME PICKER FUNCTIONS ----------------
+  const openDateTimePicker = () => {
+    setShowDateTimePicker(true);
+    setCustomDate(dueDate ? new Date(dueDate) : new Date());
+    setCustomTime(dueTime || "12:00");
+  };
+
+  const applyDateTime = () => {
+    const dateStr = customDate.toISOString().split("T")[0];
+    setDueDate(dateStr);
+    setDueTime(customTime);
+    setShowDateTimePicker(false);
+  };
+
+  const quickSetDateTime = (minutesFromNow) => {
+    const now = new Date();
+    const newDate = new Date(now.getTime() + minutesFromNow * 60000);
+    setDueDate(newDate.toISOString().split("T")[0]);
+    setDueTime(
+      `${String(newDate.getHours()).padStart(2, "0")}:${String(
+        newDate.getMinutes()
+      ).padStart(2, "0")}`
+    );
+    setShowDateTimePicker(false);
+  };
+
+  const clearDateTime = () => {
+    setDueDate("");
+    setDueTime("12:00");
+    setShowDateTimePicker(false);
+  };
 
   // ---------------- TASK FUNCTIONS ----------------
   const addTask = () => {
@@ -293,6 +328,147 @@ function HomeComponent() {
         </div>
       )}
 
+      {showDateTimePicker && (
+        <div className="datetime-picker-overlay">
+          <div className="datetime-picker-modal">
+            <div className="datetime-picker-header">
+              <h3>SET DATE & TIME</h3>
+              <button
+                className="close-picker-btn"
+                onClick={() => setShowDateTimePicker(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="datetime-picker-content">
+              <div className="date-section">
+                <h4>DATE</h4>
+                <div className="calendar-container">
+                  <div className="calendar-nav">
+                    <button
+                      onClick={() =>
+                        setCustomDate(
+                          new Date(
+                            customDate.getFullYear(),
+                            customDate.getMonth() - 1,
+                            1
+                          )
+                        )
+                      }
+                      className="nav-btn"
+                    >
+                      ◀
+                    </button>
+                    <span className="current-month">
+                      {customDate.toLocaleString("default", {
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setCustomDate(
+                          new Date(
+                            customDate.getFullYear(),
+                            customDate.getMonth() + 1,
+                            1
+                          )
+                        )
+                      }
+                      className="nav-btn"
+                    >
+                      ▶
+                    </button>
+                  </div>
+                  <div className="calendar-grid">
+                    {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
+                      <div key={day} className="calendar-day-header">
+                        {day}
+                      </div>
+                    ))}
+                    {Array.from(
+                      {
+                        length: new Date(
+                          customDate.getFullYear(),
+                          customDate.getMonth(),
+                          0
+                        ).getDate(),
+                      },
+                      (_, i) => {
+                        const day = i + 1;
+                        const date = new Date(
+                          customDate.getFullYear(),
+                          customDate.getMonth(),
+                          day
+                        );
+                        const isToday =
+                          date.toDateString() === new Date().toDateString();
+                        const isSelected =
+                          date.toDateString() === customDate.toDateString();
+
+                        return (
+                          <button
+                            key={day}
+                            className={`calendar-day ${
+                              isToday ? "today" : ""
+                            } ${isSelected ? "selected" : ""}`}
+                            onClick={() => setCustomDate(date)}
+                          >
+                            {day}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="time-section">
+                <h4>TIME</h4>
+                <div className="time-input-container">
+                  <input
+                    type="time"
+                    value={customTime}
+                    onChange={(e) => setCustomTime(e.target.value)}
+                    className="cyber-time-input"
+                  />
+                </div>
+                <div className="quick-time-buttons">
+                  <button
+                    onClick={() => quickSetDateTime(30)}
+                    className="quick-time-btn"
+                  >
+                    30 MIN
+                  </button>
+                  <button
+                    onClick={() => quickSetDateTime(60)}
+                    className="quick-time-btn"
+                  >
+                    1 HOUR
+                  </button>
+                  <button
+                    onClick={() => quickSetDateTime(1440)}
+                    className="quick-time-btn"
+                  >
+                    TOMORROW
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="datetime-picker-footer">
+              <button onClick={clearDateTime} className="clear-datetime-btn">
+                CLEAR
+              </button>
+              <button onClick={applyDateTime} className="apply-datetime-btn">
+                APPLY
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="app-wrapper">
         {/* SIDEBAR */}
         <aside className="cyber-sidebar">
@@ -448,18 +624,19 @@ function HomeComponent() {
               onChange={(e) => setNewTask(e.target.value)}
               onKeyPress={handleKeyPress}
             />
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="cyber-date-input"
-            />
-            <input
-              type="time"
-              value={dueTime}
-              onChange={(e) => setDueTime(e.target.value)}
-              className="cyber-time-input"
-            />
+
+            <div className="datetime-input-container">
+              <button
+                onClick={openDateTimePicker}
+                className="datetime-trigger-btn"
+              >
+                ⏰{" "}
+                {dueDate
+                  ? format(new Date(`${dueDate}T${dueTime}`), "MM/dd/yy HH:mm")
+                  : "SET TIME"}
+              </button>
+            </div>
+
             <button onClick={addTask} className="cyber-add-btn">
               ADD
             </button>

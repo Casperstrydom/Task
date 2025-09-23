@@ -1,8 +1,8 @@
-// backend/src/routes/taskRoute.js
+// backend/src/routes/taskRoute.mjs
 import express from "express";
 import Task from "../models/Task.mjs";
 import User from "../models/User.mjs";
-import webpush from "web-push";
+import webpush from "../webpush.mjs"; // ✅ use centralized ES module config
 import { subscriptions } from "../subscriptions.mjs"; // shared subscription store
 import auth from "../middleware/auth.mjs"; // auth middleware
 
@@ -73,12 +73,9 @@ router.post("/", auth, async (req, res) => {
     });
 
     // Send notifications to unique subscriptions
-    const uniqueSubsMap = new Map();
-    subscriptions.forEach((sub) => {
-      if (!uniqueSubsMap.has(sub.endpoint))
-        uniqueSubsMap.set(sub.endpoint, sub);
-    });
-    const uniqueSubs = Array.from(uniqueSubsMap.values());
+    const uniqueSubs = [
+      ...new Map(subscriptions.map((s) => [s.endpoint, s])).values(),
+    ];
 
     for (const sub of uniqueSubs) {
       try {
