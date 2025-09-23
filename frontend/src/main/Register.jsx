@@ -10,34 +10,32 @@ export default function Register() {
 
   const handleRegister = async (formData) => {
     try {
-      const res = await axios.post(`${apiBase}/auth/register`, formData);
+      const res = await axios.post(`${apiBase}/auth/register`, formData, {
+        headers: { "Content-Type": "application/json" },
+      });
 
       if (res.data.token) {
-        localStorage.setItem("token", res.data.token); // store JWT
+        localStorage.setItem("token", res.data.token);
       }
 
       console.log("✅ Registration successful:", res.data);
-
       alert("Registration successful! Please log in.");
-
-      navigate("/home"); // redirect after register
+      navigate("/home");
     } catch (err) {
       console.error(
         "❌ Registration failed:",
         err.response?.data || err.message
       );
       alert(
-        err.response?.data?.error || "Registration failed. Please try again."
+        err.response?.data?.message || "Registration failed. Please try again."
       );
     }
   };
 
   return (
-    <div>
-      <RegisterComponent
-        onRegister={handleRegister}
-        switchToLogin={() => navigate("/login")}
-      />
-    </div>
+    <RegisterComponent
+      onRegister={handleRegister}
+      switchToLogin={() => navigate("/login")}
+    />
   );
 }

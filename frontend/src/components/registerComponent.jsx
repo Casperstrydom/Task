@@ -1,10 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
 import "../main/index.css";
 
-const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-
-const RegisterComponent = ({ switchToLogin }) => {
+const RegisterComponent = ({ onRegister, switchToLogin }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -24,38 +21,18 @@ const RegisterComponent = ({ switchToLogin }) => {
 
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match!");
-      return;
+      return; // ❌ this skipped resetting loading
     }
 
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${apiBase}/auth/register`,
-        {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      if (res.status === 201) {
-        // If your backend sends a token
-        if (res.data.token) localStorage.setItem("token", res.data.token);
-
-        // Redirect to /home
-        window.location.href = "/home"; // Or use navigate("/home") if using React Router
+      if (typeof onRegister === "function") {
+        await onRegister(formData); // ✅ Pass data up to parent
+      } else {
+        console.error("❌ onRegister prop is not provided");
       }
-    } catch (err) {
-      console.error("❌ Registration failed:", err);
-      alert(
-        err.response?.data?.message ||
-          "Registration failed. Please try again later."
-      );
     } finally {
-      setLoading(false);
+      setLoading(false); // ✅ Always reset
     }
   };
 
