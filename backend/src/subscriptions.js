@@ -1,4 +1,1 @@
-// subscriptions.js
-module.exports = {
-  subscriptions: [],
-};
+export const subscriptions = [];

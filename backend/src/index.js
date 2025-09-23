@@ -1,16 +1,18 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const swaggerJsdoc = require("swagger-jsdoc");
-const swaggerUi = require("swagger-ui-express");
-const webpush = require("web-push");
-const path = require("path");
-require("dotenv").config();
+// backend/src/index.js
+import express from "express";
+import mongoose from "mongoose";
+import swaggerJsdoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
+import webpush from "web-push";
+import path from "path";
+import dotenv from "dotenv";
+dotenv.config();
 
-const { subscriptions } = require("./subscriptions");
+import { subscriptions } from "./subscriptions.js"; // ESM style
 
-const taskRoutes = require("./routes/taskRoute");
-const authRoutes = require("./routes/authRoute");
-const userRoutes = require("./routes/userRoute");
+import taskRoutes from "./routes/taskRoute.js";
+import authRoutes from "./routes/authRoute.js";
+import userRoutes from "./routes/userRoute.js";
 
 const app = express();
 
@@ -27,7 +29,7 @@ app.use((req, res, next) => {
   if (!origin || allowedOrigins.includes(origin)) {
     res.setHeader(
       "Access-Control-Allow-Origin",
-      origin || "*" // fallback for no origin (like Postman)
+      origin || /.*/ // fallback for no origin (like Postman)
     );
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader(
@@ -116,11 +118,12 @@ app.use("/", userRoutes);
 const __dirname = path.resolve();
 app.use(express.static(path.join(__dirname, "public")));
 
+// Catch-all for React SPA routing
 app.get(/.*/, (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ----------------- Health & Default -----------------
+// ----------------- Health Check -----------------
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // ----------------- MongoDB Connection & Server Start -----------------
@@ -143,5 +146,3 @@ mongoose
     console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   });
-
-module.exports = app;
