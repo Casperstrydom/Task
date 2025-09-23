@@ -382,11 +382,12 @@ function HomeComponent() {
                     </button>
                   </div>
                   <div className="calendar-grid">
-                    {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
-                      <div key={day} className="calendar-day-header">
+                    {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+                      <div key={`${day}-${i}`} className="calendar-day-header">
                         {day}
                       </div>
                     ))}
+
                     {Array.from(
                       {
                         length: new Date(
