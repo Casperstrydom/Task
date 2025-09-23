@@ -1,0 +1,22 @@
+{
+    "sourceFile": "frontend/.gitignore",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1757601542540,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758274537406,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,11 @@\n \n \n # Environment variables\n .env\n+.lh/\n \n+\n # Logs\n logs\n *.log\n npm-debug.log*\n"
+                }
+            ],
+            "date": 1757601542540,
+            "name": "Commit-0",
+            "content": "\n\n# Environment variables\n.env\n\n# Logs\nlogs\n*.log\nnpm-debug.log*\nyarn-debug.log*\nyarn-error.log*\npnpm-debug.log*\nlerna-debug.log*\n\nnode_modules\ndist\ndist-ssr\n*.local\n\n# Editor directories and files\n.vscode/*\n!.vscode/extensions.json\n.idea\n.DS_Store\n*.suo\n*.ntvs*\n*.njsproj\n*.sln\n*.sw?\n"
+        }
+    ]
+}

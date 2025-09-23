@@ -1,0 +1,22 @@
+{
+    "sourceFile": "backend/src/middleware/auth.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1758176421408,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758190120159,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,11 +5,19 @@\n   const token = req.headers.authorization?.split(\" \")[1];\r\n   if (!token) return res.status(401).json({ error: \"No token\" });\r\n \r\n   try {\r\n-    const decoded = jwt.verify(token, process.env.JWT_SECRET);\r\n+    // Verify JWT with fallback secret\r\n+    const decoded = jwt.verify(token, process.env.JWT_SECRET || \"dev_secret\");\r\n+\r\n     req.userId = decoded.id;\r\n     next();\r\n-  } catch {\r\n-    res.status(403).json({ error: \"Invalid token\" });\r\n+  } catch (err) {\r\n+    console.error(\"JWT verification failed:\", err.message);\r\n+    if (err.name === \"TokenExpiredError\") {\r\n+      return res\r\n+        .status(403)\r\n+        .json({ error: \"Token expired. Please log in again.\" });\r\n+    }\r\n+    res.status(403).json({ error: \"Invalid token. Please log in again.\" });\r\n   }\r\n };\r\n"
+                }
+            ],
+            "date": 1758176421408,
+            "name": "Commit-0",
+            "content": "// middleware/auth.js\r\nconst jwt = require(\"jsonwebtoken\");\r\n\r\nmodule.exports = (req, res, next) => {\r\n  const token = req.headers.authorization?.split(\" \")[1];\r\n  if (!token) return res.status(401).json({ error: \"No token\" });\r\n\r\n  try {\r\n    const decoded = jwt.verify(token, process.env.JWT_SECRET);\r\n    req.userId = decoded.id;\r\n    next();\r\n  } catch {\r\n    res.status(403).json({ error: \"Invalid token\" });\r\n  }\r\n};\r\n"
+        }
+    ]
+}

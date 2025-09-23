@@ -1,0 +1,38 @@
+{
+    "sourceFile": "backend/src/app.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 5,
+            "patches": [
+                {
+                    "date": 1757313519063,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757575622392,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n const express = require(\"express\");\r\n const cors = require(\"cors\");\r\n const swaggerUi = require(\"swagger-ui-express\");\r\n const swaggerJsdoc = require(\"swagger-jsdoc\");\r\n-const tasksRouter = require(\"./route/taskRoute\");\r\n+const taskRouter = require(\"./route/taskRoute\");\r\n \r\n const app = express();\r\n app.use(cors());\r\n app.use(express.json());\r\n"
+                },
+                {
+                    "date": 1757575651151,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,7 +22,7 @@\n });\r\n app.use(\"/api-docs\", swaggerUi.serve, swaggerUi.setup(swaggerSpec));\r\n \r\n // Routes\r\n-app.use(\"/tasks\", tasksRouter);\r\n+app.use(\"/task\", taskRouter);\r\n \r\n module.exports = app;\r\n"
+                },
+                {
+                    "date": 1757575776869,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n const express = require(\"express\");\r\n const cors = require(\"cors\");\r\n const swaggerUi = require(\"swagger-ui-express\");\r\n const swaggerJsdoc = require(\"swagger-jsdoc\");\r\n-const taskRouter = require(\"./route/taskRoute\");\r\n+const taskRouter = require(\"../src/routes/taskRoute\")\r\n \r\n const app = express();\r\n app.use(cors());\r\n app.use(express.json());\r\n"
+                },
+                {
+                    "date": 1757575808507,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n const express = require(\"express\");\r\n const cors = require(\"cors\");\r\n const swaggerUi = require(\"swagger-ui-express\");\r\n const swaggerJsdoc = require(\"swagger-jsdoc\");\r\n-const taskRouter = require(\"../src/routes/taskRoute\");\r\n+const tasksRouter = require(\"./route/taskRoute\");\r\n \r\n const app = express();\r\n app.use(cors());\r\n app.use(express.json());\r\n@@ -22,7 +22,7 @@\n });\r\n app.use(\"/api-docs\", swaggerUi.serve, swaggerUi.setup(swaggerSpec));\r\n \r\n // Routes\r\n-app.use(\"/task\", taskRouter);\r\n+app.use(\"/tasks\", tasksRouter);\r\n \r\n module.exports = app;\r\n"
+                },
+                {
+                    "date": 1757575972347,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n const express = require(\"express\");\r\n const cors = require(\"cors\");\r\n const swaggerUi = require(\"swagger-ui-express\");\r\n const swaggerJsdoc = require(\"swagger-jsdoc\");\r\n-const tasksRouter = require(\"./route/taskRoute\");\r\n+const tasksRouter = require(\"./routes/taskRoute\");\r\n \r\n const app = express();\r\n app.use(cors());\r\n app.use(express.json());\r\n@@ -17,9 +17,9 @@\n     openapi: \"3.0.0\",\r\n     info: { title: \"Task Manager API\", version: \"1.0.0\" },\r\n     servers: [{ url: \"http://localhost:5000\" }],\r\n   },\r\n-  apis: [\"./src/route/*.js\"], // JSDoc in routes\r\n+  apis: [\"./src/routes/*.js\"], // JSDoc in routes\r\n });\r\n app.use(\"/api-docs\", swaggerUi.serve, swaggerUi.setup(swaggerSpec));\r\n \r\n // Routes\r\n"
+                }
+            ],
+            "date": 1757313519063,
+            "name": "Commit-0",
+            "content": "const express = require(\"express\");\r\nconst cors = require(\"cors\");\r\nconst swaggerUi = require(\"swagger-ui-express\");\r\nconst swaggerJsdoc = require(\"swagger-jsdoc\");\r\nconst tasksRouter = require(\"./route/taskRoute\");\r\n\r\nconst app = express();\r\napp.use(cors());\r\napp.use(express.json());\r\n\r\n// Health\r\napp.get(\"/health\", (_req, res) => res.sendStatus(200));\r\n\r\n// Swagger/OpenAPI\r\nconst swaggerSpec = swaggerJsdoc({\r\n  definition: {\r\n    openapi: \"3.0.0\",\r\n    info: { title: \"Task Manager API\", version: \"1.0.0\" },\r\n    servers: [{ url: \"http://localhost:5000\" }],\r\n  },\r\n  apis: [\"./src/route/*.js\"], // JSDoc in routes\r\n});\r\napp.use(\"/api-docs\", swaggerUi.serve, swaggerUi.setup(swaggerSpec));\r\n\r\n// Routes\r\napp.use(\"/tasks\", tasksRouter);\r\n\r\nmodule.exports = app;\r\n"
+        }
+    ]
+}

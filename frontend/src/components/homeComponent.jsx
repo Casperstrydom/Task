@@ -10,7 +10,7 @@ function HomeComponent() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [dueTime, setDueTime] = useState("12:00"); // ✅ 24-hour format only
+  const [dueTime, setDueTime] = useState("12:00"); // 24-hour format
   const [friends, setFriends] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -33,11 +33,16 @@ function HomeComponent() {
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     if (!token) return null;
-    return { headers: { Authorization: `Bearer ${token}` } };
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    };
   };
 
   const handleTokenError = (err) => {
-    if (err.response?.status === 403) {
+    if (err.response?.status === 401 || err.response?.status === 403) {
       alert("Session expired or invalid token. Please log in again.");
       localStorage.removeItem("token");
     } else {
@@ -138,7 +143,7 @@ function HomeComponent() {
         setTasks((prev) => [...prev, newTaskItem]);
         setNewTask("");
         setDueDate("");
-        setDueTime("12:00"); // reset correctly
+        setDueTime("12:00");
       })
       .catch(handleTokenError);
   };
@@ -266,7 +271,6 @@ function HomeComponent() {
   // ---------------- RENDER ----------------
   return (
     <main className="futuristic-container">
-      {/* --- GLOWING ORBS & NOTIFICATIONS --- */}
       <div className="cyber-grid"></div>
       <div className="glowing-orbs">
         <div className="orb orb-1"></div>
@@ -290,7 +294,7 @@ function HomeComponent() {
       )}
 
       <div className="app-wrapper">
-        {/* --- SIDEBAR --- */}
+        {/* SIDEBAR */}
         <aside className="cyber-sidebar">
           <div className="sidebar-header">
             <h2 className="neon-text">CONNECTIONS</h2>
@@ -348,15 +352,14 @@ function HomeComponent() {
             </div>
           ) : (
             <>
-              {/* FRIEND REQUESTS */}
               {incomingRequests.length > 0 && (
                 <div className="cyber-list-section">
                   <h3 className="cyber-subtitle">FRIEND REQUESTS</h3>
                   <div className="scroll-container">
                     <ul className="cyber-list">
-                      {incomingRequests.map((req, i) => (
+                      {incomingRequests.map((req) => (
                         <li
-                          key={req._id || i}
+                          key={req._id}
                           className="cyber-list-item request-item"
                         >
                           <span>{req.name}</span>
@@ -381,13 +384,12 @@ function HomeComponent() {
                 </div>
               )}
 
-              {/* USERS */}
               <div className="cyber-list-section">
                 <h3 className="cyber-subtitle">USERS</h3>
                 <div className="scroll-container">
                   <ul className="cyber-list">
-                    {availableUsers.map((user, i) => (
-                      <li key={user._id || i} className="cyber-list-item">
+                    {availableUsers.map((user) => (
+                      <li key={user._id} className="cyber-list-item">
                         <span>{user.name}</span>
                         <button
                           onClick={() => sendFriendRequest(user._id, user.name)}
@@ -404,15 +406,14 @@ function HomeComponent() {
                 </div>
               </div>
 
-              {/* FRIENDS */}
               <div className="cyber-list-section">
                 <h3 className="cyber-subtitle">
                   FRIENDS ({validFriends.length})
                 </h3>
                 <div className="scroll-container">
                   <ul className="cyber-list">
-                    {validFriends.map((friend, i) => (
-                      <li key={friend._id || i} className="cyber-list-item">
+                    {validFriends.map((friend) => (
+                      <li key={friend._id} className="cyber-list-item">
                         <span>{friend.name}</span>
                         <button
                           onClick={() => removeFriend(friend._id, friend.name)}
@@ -429,7 +430,7 @@ function HomeComponent() {
           )}
         </aside>
 
-        {/* --- MAIN TASK SECTION --- */}
+        {/* MAIN TASK SECTION */}
         <section className="cyber-main">
           <div className="main-header">
             <h1 className="cyber-title">
@@ -467,8 +468,8 @@ function HomeComponent() {
           <div className="cyber-tasks-container scroll-container">
             {sortedTasks.length > 0 ? (
               <ul className="cyber-task-list">
-                {sortedTasks.map((task, i) => (
-                  <li key={task._id || i} className="cyber-task-item">
+                {sortedTasks.map((task) => (
+                  <li key={task._id} className="cyber-task-item">
                     <span>
                       {task.owner === currentUser._id ? "" : "👥 "} {task.title}
                     </span>

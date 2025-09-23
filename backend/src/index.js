@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const webpush = require("web-push");
+const path = require("path");
 require("dotenv").config();
 
 const { subscriptions } = require("./subscriptions");
@@ -13,12 +14,16 @@ const userRoutes = require("./routes/userRoute");
 
 const app = express();
 
+// ----------------- Middleware -----------------
+app.use(express.json()); // Parse JSON bodies
+
 // ----------------- Allowed Origins -----------------
+const allowedOrigins = ["http://localhost:5173"]; // Add your frontend URL if needed
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   console.log("🌍 Incoming request:", req.method, req.url, "Origin:", origin);
 
-  // Always set CORS headers for allowed origins
   if (!origin || allowedOrigins.includes(origin)) {
     res.setHeader(
       "Access-Control-Allow-Origin",
@@ -35,11 +40,7 @@ app.use((req, res, next) => {
     console.warn("❌ Blocked by CORS:", origin);
   }
 
-  // Preflight requests always return 200
-  if (req.method === "OPTIONS") {
-    console.log("⚡ Preflight request handled");
-    return res.sendStatus(200);
-  }
+  if (req.method === "OPTIONS") return res.sendStatus(200);
 
   next();
 });
@@ -60,6 +61,7 @@ const swaggerOptions = {
   },
   apis: ["./routes/*.js"],
 };
+
 app.use(
   "/api-docs",
   swaggerUi.serve,
@@ -105,16 +107,23 @@ app.post("/sendNotification", async (req, res) => {
   res.json({ message: "Notifications sent" });
 });
 
-// ----------------- ROUTES -----------------
+// ----------------- API Routes -----------------
 app.use("/tasks", taskRoutes);
 app.use("/auth", authRoutes);
 app.use("/", userRoutes);
 
+// ----------------- Serve React Frontend -----------------
+const __dirname = path.resolve();
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get(/.*/, (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // ----------------- Health & Default -----------------
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
-app.get("/", (_req, res) => res.send("Hello, Task Manager API!"));
 
-// ----------------- MongoDB Connection -----------------
+// ----------------- MongoDB Connection & Server Start -----------------
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
