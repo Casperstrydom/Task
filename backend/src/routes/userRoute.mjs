@@ -1,6 +1,7 @@
-const express = require("express");
-const User = require("../models/User");
-const auth = require("../middleware/auth");
+// backend/src/routes/userRoute.js
+import express from "express";
+import User from "../models/User.mjs";
+import auth from "../middleware/auth.mjs";
 
 const router = express.Router();
 
@@ -182,4 +183,5 @@ router.get("/groups", (_req, res) => {
   ]);
 });
 
-module.exports = router;
+// ✅ Export as ESM
+export default router;

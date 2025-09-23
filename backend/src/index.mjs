@@ -8,11 +8,11 @@ import path from "path";
 import dotenv from "dotenv";
 dotenv.config();
 
-import { subscriptions } from "./subscriptions.js"; // ESM style
+import { subscriptions } from "./subscriptions.mjs"; // ESM style
 
-import taskRoutes from "./routes/taskRoute.js";
-import authRoutes from "./routes/authRoute.js";
-import userRoutes from "./routes/userRoute.js";
+import taskRoutes from "./routes/taskRoute.mjs";
+import authRoutes from "./routes/authRoute.mjs";
+import userRoutes from "./routes/userRoute.mjs";
 
 const app = express();
 

@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+// backend/src/models/Group.js
+import mongoose from "mongoose";
 
 const GroupSchema = new mongoose.Schema(
   {
@@ -8,4 +9,5 @@ const GroupSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Group", GroupSchema);
+// ✅ Export as ESM
+export default mongoose.model("Group", GroupSchema);

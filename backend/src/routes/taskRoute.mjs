@@ -1,9 +1,10 @@
-const express = require("express");
-const Task = require("../models/Task");
-const User = require("../models/User");
-const webpush = require("web-push");
-const { subscriptions } = require("../subscriptions"); // shared subscription store
-const auth = require("../middleware/auth"); // make sure you have auth middleware
+// backend/src/routes/taskRoute.js
+import express from "express";
+import Task from "../models/Task.mjs";
+import User from "../models/User.mjs";
+import webpush from "web-push";
+import { subscriptions } from "../subscriptions.mjs"; // shared subscription store
+import auth from "../middleware/auth.mjs"; // auth middleware
 
 const router = express.Router();
 
@@ -61,10 +62,10 @@ router.post("/", auth, async (req, res) => {
       title: title.trim(),
       dueDate: dueDate || null,
       completed: false,
-      owner: req.userId, // 👈 attach owner
+      owner: req.userId,
     });
 
-    // ---- 🔔 Push Notification (optional) ----
+    // ---- 🔔 Push Notification ----
     const payload = JSON.stringify({
       title: "✅ New Task Created",
       body: `Task: ${task.title}`,
@@ -122,12 +123,10 @@ router.patch("/:id", auth, async (req, res) => {
     );
 
     if (!task) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "Task not found or you don't have permission",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "Task not found or you don't have permission",
+      });
     }
 
     res.status(200).json({ success: true, task });
@@ -155,12 +154,10 @@ router.delete("/:id", auth, async (req, res) => {
     });
 
     if (!deletedTask) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "Task not found or you don't have permission",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "Task not found or you don't have permission",
+      });
     }
 
     res.status(200).json({
@@ -174,4 +171,5 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+// ✅ Export as ESM
+export default router;

@@ -1,5 +1,5 @@
-// models/User.js
-const mongoose = require("mongoose");
+// backend/src/models/User.js
+import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
   {
@@ -15,4 +15,5 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("User", UserSchema);
+// ✅ Export as ESM
+export default mongoose.model("User", UserSchema);

@@ -1,7 +1,7 @@
-// middleware/auth.js
-const jwt = require("jsonwebtoken");
+// backend/src/middleware/auth.js
+import jwt from "jsonwebtoken";
 
-module.exports = (req, res, next) => {
+const auth = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "No token" });
 
@@ -21,3 +21,5 @@ module.exports = (req, res, next) => {
     res.status(403).json({ error: "Invalid token. Please log in again." });
   }
 };
+
+export default auth;

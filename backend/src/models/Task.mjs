@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+// backend/src/models/Task.js
+import mongoose from "mongoose";
 
 const taskSchema = new mongoose.Schema(
   {
@@ -9,9 +10,10 @@ const taskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }, // 👈 add this
+    }, // 👈 owner of the task
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Task", taskSchema);
+// ✅ Export as ESM
+export default mongoose.model("Task", taskSchema);

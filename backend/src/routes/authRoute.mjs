@@ -1,9 +1,10 @@
-// routes/authRoute.js
-const express = require("express");
-const User = require("../models/User");
-const bcrypt = require("bcrypt");
+// backend/src/routes/authRoute.js
+import express from "express";
+import User from "../models/User.mjs";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
 const router = express.Router();
-const jwt = require("jsonwebtoken");
 
 /**
  * @swagger
@@ -22,10 +23,16 @@ const jwt = require("jsonwebtoken");
  *               - email
  *               - password
  *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "John Doe"
  *               email:
  *                 type: string
  *                 example: "user@example.com"
  *               password:
+ *                 type: string
+ *                 example: "password123"
+ *               confirmPassword:
  *                 type: string
  *                 example: "password123"
  *     responses:
@@ -35,7 +42,6 @@ const jwt = require("jsonwebtoken");
 router.post("/register", async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
 
-  // Basic validation
   if (!name || !email || !password || !confirmPassword) {
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -57,7 +63,6 @@ router.post("/register", async (req, res) => {
       password: hashedPassword,
     });
 
-    // JWT generation
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       console.error("JWT_SECRET not set");
@@ -148,4 +153,5 @@ router.post("/login", async (req, res) => {
   }
 });
 
-module.exports = router;
+// ✅ Export as ESM
+export default router;

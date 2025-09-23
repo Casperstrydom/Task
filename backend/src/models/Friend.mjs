@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+// backend/src/models/Friend.js
+import mongoose from "mongoose";
 
 const FriendSchema = new mongoose.Schema(
   {
@@ -16,4 +17,5 @@ const FriendSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Friend", FriendSchema);
+// ✅ Export as ESM
+export default mongoose.model("Friend", FriendSchema);
