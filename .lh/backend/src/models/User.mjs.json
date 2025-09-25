@@ -3,11 +3,23 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1758782988063,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758812770560,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,8 @@\n     // Friend system\r\n     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }],\r\n     friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // incoming\r\n     sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // outgoing\r\n-    isPrivate: { type: Boolean, default: false }, // profile visibility\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n"
+                },
+                {
+                    "date": 1758812778781,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,8 @@\n     // Friend system\r\n     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }],\r\n     friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // incoming\r\n     sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // outgoing\r\n-    isPrivate: { type: Boolean, default: false }, // profile visibility\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n"
+                },
+                {
+                    "date": 1758812809359,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,8 @@\n     // Friend system\r\n     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }],\r\n     friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // incoming\r\n     sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: \"User\" }], // outgoing\r\n-    isPrivate: { type: Boolean, default: false }, // profile visibility\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n"
                 }
             ],
             "date": 1758782988063,

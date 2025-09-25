@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../main/home.css";
+import "../main/index.css";
 import { format } from "date-fns";
 
 const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -135,6 +136,8 @@ function HomeComponent() {
   }, [fetchData, fetchFriendRequests]);
 
   // ---------------- PRIVACY TOGGLE ----------------
+  const navigate = useNavigate(); // ✅ no-undef fixed
+
   const togglePrivacy = () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -145,12 +148,23 @@ function HomeComponent() {
       .put(`${apiBase}/user/privacy`, { isPrivate: newPrivacyState }, headers)
       .then(() => {
         setCurrentUser((prev) => ({ ...prev, isPrivate: newPrivacyState }));
+
         showTempNotification(
           `Profile is now ${newPrivacyState ? "private" : "public"}`
         );
+
+        // 👇 redirect depending on state
+        if (newPrivacyState) {
+          navigate("/home-private");
+        } else {
+          navigate("/home");
+        }
       })
       .catch(handleTokenError);
   };
+  const filteredTasks = currentUser.isPrivate
+    ? tasks.filter((task) => task.owner === currentUser._id)
+    : tasks;
 
   // ---------------- DATE/TIME PICKER FUNCTIONS ----------------
   const openDateTimePicker = () => {
@@ -421,11 +435,6 @@ function HomeComponent() {
 
   const validFriends = friends.filter((friend) => friend.name?.trim());
 
-  // ---------------- FILTERED TASKS BASED ON PRIVACY ----------------
-  const filteredTasks = currentUser.isPrivate
-    ? tasks.filter((task) => task.owner === currentUser._id)
-    : tasks;
-
   // ---------------- SORTED TASKS ----------------
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (!a.dueDate) return 1;
@@ -683,18 +692,14 @@ function HomeComponent() {
                   <h4>PRIVACY SETTINGS</h4>
                   <div className="privacy-toggle">
                     <span>Private Mode:</span>
-
-                    {/* Modern toggle switch */}
-                    <label className="switch">
+                    <label className="toggle-switch">
                       <input
                         type="checkbox"
                         checked={currentUser.isPrivate}
                         onChange={togglePrivacy}
                       />
-                      <span className="slider"></span>
+                      <span className="toggle-slider"></span>
                     </label>
-
-                    {/* Status text */}
                     <span
                       className={`privacy-status ${
                         currentUser.isPrivate ? "private" : "public"
@@ -703,8 +708,6 @@ function HomeComponent() {
                       {currentUser.isPrivate ? "PRIVATE" : "PUBLIC"}
                     </span>
                   </div>
-
-                  {/* Description text */}
                   <p className="privacy-description">
                     {currentUser.isPrivate
                       ? "Your tasks are hidden from friends"
@@ -776,13 +779,13 @@ function HomeComponent() {
                   </h3>
                   {/* PRIVACY TOGGLE QUICK ACCESS */}
                   <div className="privacy-toggle-quick">
-                    <label className="switch small">
+                    <label className="toggle-switch small">
                       <input
                         type="checkbox"
                         checked={currentUser.isPrivate}
                         onChange={togglePrivacy}
                       />
-                      <span className="slider"></span>
+                      <span className="toggle-slider"></span>
                     </label>
                     <span className="privacy-label">
                       {currentUser.isPrivate ? "🔒 Private" : "🔓 Public"}

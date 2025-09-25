@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom"; // 👈
 import axios from "axios";
-import "../main/home.css";
+import "../main/index.css";
 import { format } from "date-fns";
 
 const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -19,7 +20,7 @@ function HomePrivateComponent() {
     name: "",
     email: "",
     joined: "",
-    isPrivate: false,
+    isPrivate: false, // New privacy setting
   });
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
@@ -32,7 +33,7 @@ function HomePrivateComponent() {
   const [editTaskTitle, setEditTaskTitle] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
   const [editDueTime, setEditDueTime] = useState("12:00");
-  const [timeTracking, setTimeTracking] = useState({});
+  const [timeTracking, setTimeTracking] = useState({}); // { taskId: { startTime: Date, elapsed: number } }
 
   // ---------------- AUDIO ----------------
   const bellAudio = useRef(new Audio("/bell.mp3"));
@@ -135,6 +136,8 @@ function HomePrivateComponent() {
   }, [fetchData, fetchFriendRequests]);
 
   // ---------------- PRIVACY TOGGLE ----------------
+  const navigate = useNavigate();
+
   const togglePrivacy = () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -145,9 +148,17 @@ function HomePrivateComponent() {
       .put(`${apiBase}/user/privacy`, { isPrivate: newPrivacyState }, headers)
       .then(() => {
         setCurrentUser((prev) => ({ ...prev, isPrivate: newPrivacyState }));
+
         showTempNotification(
           `Profile is now ${newPrivacyState ? "private" : "public"}`
         );
+
+        // 👇 redirect opposite way
+        if (newPrivacyState) {
+          navigate("/home-private");
+        } else {
+          navigate("/home");
+        }
       })
       .catch(handleTokenError);
   };
@@ -215,6 +226,7 @@ function HomePrivateComponent() {
       .delete(`${apiBase}/tasks/${id}`, headers)
       .then(() => {
         setTasks((prev) => prev.filter((t) => t._id !== id));
+        // Stop time tracking if this task was being tracked
         if (timeTracking[id]) {
           setTimeTracking((prev) => {
             const newTracking = { ...prev };
@@ -677,57 +689,27 @@ function HomePrivateComponent() {
                   </div>
                 </div>
 
-                {/* UPDATED PRIVACY TOGGLE WITH SLIDER */}
+                {/* PRIVACY TOGGLE IN PROFILE */}
                 <div className="privacy-section">
                   <h4>PRIVACY SETTINGS</h4>
                   <div className="privacy-toggle">
-                    <span className="toggle-label">Profile Visibility:</span>
-
-                    {/* Cyber styled slider toggle */}
-                    <div className="cyber-slider-container">
-                      <div
-                        className={`cyber-slider ${
-                          currentUser.isPrivate ? "private" : "public"
-                        }`}
-                        onClick={togglePrivacy}
-                      >
-                        <div className="slider-track">
-                          <div className="slider-thumb"></div>
-                        </div>
-
-                        {/* Labels inside toggle */}
-                        <div className="slider-labels">
-                          <span
-                            className={`label-public ${
-                              !currentUser.isPrivate ? "active" : ""
-                            }`}
-                          >
-                            🔓 PUBLIC
-                          </span>
-                          <span
-                            className={`label-private ${
-                              currentUser.isPrivate ? "active" : ""
-                            }`}
-                          >
-                            🔒 PRIVATE
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Status text */}
+                    <span>Private Mode:</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={currentUser.isPrivate}
+                        onChange={togglePrivacy}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
                     <span
                       className={`privacy-status ${
                         currentUser.isPrivate ? "private" : "public"
                       }`}
                     >
-                      {currentUser.isPrivate
-                        ? "PRIVATE MODE ACTIVE"
-                        : "PUBLIC MODE ACTIVE"}
+                      {currentUser.isPrivate ? "PRIVATE" : "PUBLIC"}
                     </span>
                   </div>
-
-                  {/* Description */}
                   <p className="privacy-description">
                     {currentUser.isPrivate
                       ? "Your tasks are hidden from friends"
@@ -797,21 +779,19 @@ function HomePrivateComponent() {
                   <h3 className="cyber-subtitle">
                     FRIENDS ({validFriends.length})
                   </h3>
-                  {/* UPDATED QUICK PRIVACY TOGGLE */}
+                  {/* PRIVACY TOGGLE QUICK ACCESS */}
                   <div className="privacy-toggle-quick">
-                    <div
-                      className={`cyber-slider-quick ${
-                        currentUser.isPrivate ? "private" : "public"
-                      }`}
-                      onClick={togglePrivacy}
-                    >
-                      <div className="slider-track-quick">
-                        <div className="slider-thumb-quick"></div>
-                      </div>
-                      <span className="privacy-label">
-                        {currentUser.isPrivate ? "🔒 Private" : "🔓 Public"}
-                      </span>
-                    </div>
+                    <label className="toggle-switch small">
+                      <input
+                        type="checkbox"
+                        checked={currentUser.isPrivate}
+                        onChange={togglePrivacy}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span className="privacy-label">
+                      {currentUser.isPrivate ? "🔒 Private" : "🔓 Public"}
+                    </span>
                   </div>
                 </div>
                 <div className="scroll-container">

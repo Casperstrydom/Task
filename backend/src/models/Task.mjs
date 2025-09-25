@@ -2,17 +2,17 @@ import mongoose from "mongoose";
 
 const taskSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    completed: { type: Boolean, default: false },
-    dueDate: { type: Date },
+    title: { type: String, required: true }, // Task title
+    completed: { type: Boolean, default: false }, // Track if done
+    dueDate: { type: Date }, // Optional deadline
     owner: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    }, // 👈 owner of the task
-    isPrivate: { type: Boolean, default: false }, // 👈 add privacy field
+      ref: "User", // Reference to User model
+      required: true, // Every task must have an owner
+    },
+    isPrivate: { type: Boolean, default: false }, // 👈 Public by default
   },
-  { timestamps: true }
+  { timestamps: true } // Adds createdAt + updatedAt
 );
 
 export default mongoose.model("Task", taskSchema);

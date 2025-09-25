@@ -7,9 +7,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 import axios from "axios";
-
+import HomePrivate from "./main/HomePrivate.jsx";
 import Home from "./main/Home.jsx";
-import HomePrivate from "./main/HomePrivate.jsx"; // new dedicated private page
 import Login from "./main/Login.jsx";
 import Register from "./main/Register.jsx";
 
@@ -19,6 +18,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    // Optional: Service Worker (disable on Amplify unless sw.js exists)
     if ("serviceWorker" in navigator && "PushManager" in window) {
       navigator.serviceWorker
         .register("/sw.js")
@@ -26,6 +26,7 @@ function App() {
         .catch((err) => console.error("❌ SW registration failed:", err));
     }
 
+    // Subscribe user to push notifications if supported
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
@@ -41,6 +42,7 @@ function App() {
           ),
         });
 
+        // Send subscription to backend
         await axios.post(`${apiBase}/subscribe`, subscription);
         console.log("✅ Subscribed for push notifications");
       } catch (err) {
@@ -60,39 +62,22 @@ function App() {
     return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
   }
 
-  // ---------------- Toggle Privacy ----------------
-  const togglePrivacy = () => {
-    setCurrentUser((prev) => ({
-      ...prev,
-      isPrivate: !prev.isPrivate,
-    }));
-  };
-
   return (
     <BrowserRouter>
       <Routes>
-        {/* Redirect root to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Home page (public tasks) */}
-        <Route path="/home" element={<Home currentUser={currentUser} />} />
-
-        {/* Dedicated Private Mode page */}
+        {/* Home & HomePrivate wrappers */}
         <Route
-          path="/private-mode"
-          element={
-            currentUser ? (
-              <HomePrivate
-                currentUser={currentUser}
-                togglePrivacy={togglePrivacy}
-              />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
+          path="/home"
+          element={<HomeWrapper currentUser={currentUser} />}
+        />
+        <Route
+          path="/home-private"
+          element={<HomePrivateWrapper currentUser={currentUser} />}
         />
 
-        {/* Login & Register */}
+        {/* Auth routes */}
         <Route
           path="/login"
           element={<LoginWrapper setCurrentUser={setCurrentUser} />}
@@ -112,12 +97,14 @@ function LoginWrapper({ setCurrentUser }) {
 
   const handleLogin = async (loginData) => {
     try {
+      // const response = await axios.post(`${apiBase}/auth/login`, loginData);
+      // setCurrentUser(response.data.user);
+
+      // Temporary mock user
       const loggedUser = {
-        _id: "12345",
         name: "Logged User",
         email: loginData.email,
         joined: new Date().toISOString(),
-        isPrivate: false, // default to public
       };
       setCurrentUser(loggedUser);
       navigate("/home");
@@ -141,12 +128,14 @@ function RegisterWrapper({ setCurrentUser }) {
 
   const handleRegister = async (formData) => {
     try {
+      // const response = await axios.post(`${apiBase}/auth/register`, formData);
+      // setCurrentUser(response.data.user);
+
+      // Temporary mock user
       const newUser = {
-        _id: "67890",
         name: formData.name,
         email: formData.email,
         joined: new Date().toISOString(),
-        isPrivate: false,
       };
       setCurrentUser(newUser);
       navigate("/home");
@@ -160,6 +149,46 @@ function RegisterWrapper({ setCurrentUser }) {
     <Register
       onRegister={handleRegister}
       switchToLogin={() => navigate("/login")}
+    />
+  );
+}
+
+// ---------------- Home Wrapper ----------------
+function HomeWrapper({ currentUser }) {
+  const navigate = useNavigate();
+
+  const handleHome = () => {
+    if (!currentUser) {
+      alert("⚠️ You must be logged in to access Home");
+      navigate("/login");
+    }
+  };
+
+  return (
+    <Home
+      currentUser={currentUser}
+      onAccessHome={handleHome}
+      switchToPrivate={() => navigate("/home-private")}
+    />
+  );
+}
+
+// ---------------- HomePrivate Wrapper ----------------
+function HomePrivateWrapper({ currentUser }) {
+  const navigate = useNavigate();
+
+  const handlePrivate = () => {
+    if (!currentUser) {
+      alert("⚠️ You must be logged in to access Private Home");
+      navigate("/login");
+    }
+  };
+
+  return (
+    <HomePrivate
+      currentUser={currentUser}
+      onRegister={handlePrivate}
+      switchToLogin={() => navigate("/private")}
     />
   );
 }

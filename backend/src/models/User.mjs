@@ -1,4 +1,4 @@
-// backend/src/models/User.js
+// backend/src/models/User.mjs
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
@@ -11,7 +11,9 @@ const UserSchema = new mongoose.Schema(
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // incoming
     sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // outgoing
-    isPrivate: { type: Boolean, default: false }, // profile visibility
+
+    // 👇 Privacy mode
+    isPrivate: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

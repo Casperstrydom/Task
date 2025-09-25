@@ -8,34 +8,29 @@ import auth from "../middleware/auth.mjs"; // auth middleware
 
 const router = express.Router();
 
-// ------------------- PUBLIC TASKS -------------------
-// Fetch all tasks that are NOT private
-router.get("/public", async (req, res) => {
-  try {
-    const tasks = await Task.find({ isPrivate: false }).sort({ createdAt: -1 });
-    res.status(200).json(tasks);
-  } catch (err) {
-    console.error("Fetch public tasks error:", err);
-    res.status(500).json({ error: "Failed to fetch public tasks" });
-  }
-});
-
-// ------------------- USER + FRIEND TASKS -------------------
 /**
  * @swagger
  * /tasks:
  *   get:
- *     summary: List all tasks visible to me and my friends
+ *     summary: List all tasks visible to me (my own, my friends’ private tasks, and global public tasks)
  *     tags:
  *       - Tasks
  */
 router.get("/", auth, async (req, res) => {
   try {
     const me = await User.findById(req.userId).populate("friends", "_id");
-    const friendIds = me.friends.map((f) => f._id);
+    const friendIds = me?.friends.map((f) => f._id) || [];
 
+    // Fetch tasks:
+    // 1. Owned by me
+    // 2. Owned by my friends AND marked private
+    // 3. Any public task
     const tasks = await Task.find({
-      owner: { $in: [req.userId, ...friendIds] },
+      $or: [
+        { owner: req.userId },
+        { owner: { $in: friendIds }, isPrivate: true },
+        { isPrivate: false },
+      ],
     }).sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -52,12 +47,11 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// ------------------- CREATE TASK -------------------
 /**
  * @swagger
  * /tasks:
  *   post:
- *     summary: Create a new task (only visible to me and my friends)
+ *     summary: Create a new task (private or public)
  *     tags:
  *       - Tasks
  */
@@ -75,17 +69,18 @@ router.post("/", auth, async (req, res) => {
       title: title.trim(),
       dueDate: dueDate || null,
       completed: false,
+      isPrivate: typeof isPrivate === "boolean" ? isPrivate : true, // default private
       owner: req.userId,
-      isPrivate: isPrivate || false, // set privacy
     });
 
-    // 🔔 Push Notification
+    // ---- 🔔 Push Notification ----
     const payload = JSON.stringify({
       title: "✅ New Task Created",
-      body: `Task: ${task.title}`,
+      body: `${task.isPrivate ? "Private" : "Public"} Task: ${task.title}`,
       icon: "/icon.png",
     });
 
+    // Send notifications to unique subscriptions
     const uniqueSubs = [
       ...new Map(subscriptions.map((s) => [s.endpoint, s])).values(),
     ];
@@ -105,7 +100,6 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-// ------------------- UPDATE TASK -------------------
 /**
  * @swagger
  * /tasks/{id}:
@@ -126,9 +120,13 @@ router.patch("/:id", auth, async (req, res) => {
       update.completed = req.body.completed;
     }
     if (typeof req.body.isPrivate === "boolean") {
-      update.isPrivate = req.body.isPrivate; // allow privacy update
+      update.isPrivate = req.body.isPrivate;
+    }
+    if (req.body.dueDate) {
+      update.dueDate = req.body.dueDate;
     }
 
+    // Only allow update if task owner is current user
     const task = await Task.findOneAndUpdate(
       { _id: id, owner: req.userId },
       update,
@@ -149,7 +147,6 @@ router.patch("/:id", auth, async (req, res) => {
   }
 });
 
-// ------------------- DELETE TASK -------------------
 /**
  * @swagger
  * /tasks/{id}:
@@ -185,4 +182,5 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
+// ✅ Export as ESM
 export default router;

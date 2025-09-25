@@ -32,25 +32,23 @@ router.get("/user/me", auth, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch user" });
   }
 });
-
-// PUT /user/privacy → toggle profile privacy
+//----------------PRIVACY TOGGLE----------------
+// PUT /user/privacy → toggle privacy
 router.put("/user/privacy", auth, async (req, res) => {
   try {
     const { isPrivate } = req.body;
-    const updatedUser = await User.findByIdAndUpdate(
+
+    const user = await User.findByIdAndUpdate(
       req.userId,
       { isPrivate },
-      { new: true, select: "name email isPrivate createdAt" } // return updated doc
-    );
+      { new: true }
+    ).select("name email isPrivate");
 
-    if (!updatedUser) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    res.json({
-      message: `Profile is now ${isPrivate ? "private" : "public"}`,
-      user: updatedUser,
-    });
+    res.json({ message: "Privacy updated", user });
   } catch (err) {
-    console.error("Update privacy error:", err);
+    console.error("Privacy toggle error:", err);
     res.status(500).json({ error: "Failed to update privacy" });
   }
 });

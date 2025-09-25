@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1758792032330,
@@ -12,6 +12,10 @@
                 {
                     "date": 1758792039636,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,4 @@\n-// backend/src/models/Task.js\r\n import mongoose from \"mongoose\";\r\n \r\n const taskSchema = new mongoose.Schema(\r\n   {\r\n@@ -10,10 +9,10 @@\n       type: mongoose.Schema.Types.ObjectId,\r\n       ref: \"User\",\r\n       required: true,\r\n     }, // 👈 owner of the task\r\n+    isPrivate: { type: Boolean, default: false }, // 👈 add privacy field\r\n   },\r\n   { timestamps: true }\r\n );\r\n \r\n-// ✅ Export as ESM\r\n export default mongoose.model(\"Task\", taskSchema);\r\n"
+                },
+                {
+                    "date": 1758802168875,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,18 +1,18 @@\n import mongoose from \"mongoose\";\r\n \r\n const taskSchema = new mongoose.Schema(\r\n   {\r\n-    title: { type: String, required: true },\r\n-    completed: { type: Boolean, default: false },\r\n-    dueDate: { type: Date },\r\n+    title: { type: String, required: true },        // Task title\r\n+    completed: { type: Boolean, default: false },   // Track if done\r\n+    dueDate: { type: Date },                        // Optional deadline\r\n     owner: {\r\n       type: mongoose.Schema.Types.ObjectId,\r\n-      ref: \"User\",\r\n-      required: true,\r\n-    }, // 👈 owner of the task\r\n-    isPrivate: { type: Boolean, default: false }, // 👈 add privacy field\r\n+      ref: \"User\",                                  // Reference to User model\r\n+      required: true,                               // Every task must have an owner\r\n+    },\r\n+    isPrivate: { type: Boolean, default: false },   // 👈 Public by default\r\n   },\r\n-  { timestamps: true }\r\n+  { timestamps: true }                              // Adds createdAt + updatedAt\r\n );\r\n \r\n export default mongoose.model(\"Task\", taskSchema);\r\n"
                 }
             ],
             "date": 1758792032329,
