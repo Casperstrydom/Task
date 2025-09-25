@@ -1,4 +1,3 @@
-// backend/src/models/Task.js
 import mongoose from "mongoose";
 
 const taskSchema = new mongoose.Schema(
@@ -11,9 +10,9 @@ const taskSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     }, // 👈 owner of the task
+    isPrivate: { type: Boolean, default: false }, // 👈 add privacy field
   },
   { timestamps: true }
 );
 
-// ✅ Export as ESM
 export default mongoose.model("Task", taskSchema);

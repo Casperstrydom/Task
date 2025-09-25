@@ -2,12 +2,25 @@
 import express from "express";
 import Task from "../models/Task.mjs";
 import User from "../models/User.mjs";
-import webpush from "../webpush.mjs"; // ✅ use centralized ES module config
+import webpush from "../webpush.mjs"; // centralized ES module config
 import { subscriptions } from "../subscriptions.mjs"; // shared subscription store
 import auth from "../middleware/auth.mjs"; // auth middleware
 
 const router = express.Router();
 
+// ------------------- PUBLIC TASKS -------------------
+// Fetch all tasks that are NOT private
+router.get("/public", async (req, res) => {
+  try {
+    const tasks = await Task.find({ isPrivate: false }).sort({ createdAt: -1 });
+    res.status(200).json(tasks);
+  } catch (err) {
+    console.error("Fetch public tasks error:", err);
+    res.status(500).json({ error: "Failed to fetch public tasks" });
+  }
+});
+
+// ------------------- USER + FRIEND TASKS -------------------
 /**
  * @swagger
  * /tasks:
@@ -21,7 +34,6 @@ router.get("/", auth, async (req, res) => {
     const me = await User.findById(req.userId).populate("friends", "_id");
     const friendIds = me.friends.map((f) => f._id);
 
-    // Fetch tasks where owner is me or one of my friends
     const tasks = await Task.find({
       owner: { $in: [req.userId, ...friendIds] },
     }).sort({ createdAt: -1 });
@@ -40,6 +52,7 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+// ------------------- CREATE TASK -------------------
 /**
  * @swagger
  * /tasks:
@@ -50,7 +63,7 @@ router.get("/", auth, async (req, res) => {
  */
 router.post("/", auth, async (req, res) => {
   try {
-    const { title, dueDate } = req.body;
+    const { title, dueDate, isPrivate } = req.body;
 
     if (!title || !title.trim()) {
       return res
@@ -63,16 +76,16 @@ router.post("/", auth, async (req, res) => {
       dueDate: dueDate || null,
       completed: false,
       owner: req.userId,
+      isPrivate: isPrivate || false, // set privacy
     });
 
-    // ---- 🔔 Push Notification ----
+    // 🔔 Push Notification
     const payload = JSON.stringify({
       title: "✅ New Task Created",
       body: `Task: ${task.title}`,
       icon: "/icon.png",
     });
 
-    // Send notifications to unique subscriptions
     const uniqueSubs = [
       ...new Map(subscriptions.map((s) => [s.endpoint, s])).values(),
     ];
@@ -92,6 +105,7 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+// ------------------- UPDATE TASK -------------------
 /**
  * @swagger
  * /tasks/{id}:
@@ -111,8 +125,10 @@ router.patch("/:id", auth, async (req, res) => {
     if (typeof req.body.completed === "boolean") {
       update.completed = req.body.completed;
     }
+    if (typeof req.body.isPrivate === "boolean") {
+      update.isPrivate = req.body.isPrivate; // allow privacy update
+    }
 
-    // Only allow update if task owner is current user
     const task = await Task.findOneAndUpdate(
       { _id: id, owner: req.userId },
       update,
@@ -133,6 +149,7 @@ router.patch("/:id", auth, async (req, res) => {
   }
 });
 
+// ------------------- DELETE TASK -------------------
 /**
  * @swagger
  * /tasks/{id}:
@@ -168,5 +185,4 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
-// ✅ Export as ESM
 export default router;
