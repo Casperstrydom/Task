@@ -9,7 +9,7 @@ import {
 import axios from "axios";
 
 import Home from "./main/Home.jsx";
-import HomePrivate from "./main/HomePrivate.jsx";
+import HomePrivate from "./main/HomePrivate.jsx"; // new dedicated private page
 import Login from "./main/Login.jsx";
 import Register from "./main/Register.jsx";
 
@@ -19,7 +19,6 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    // Optional: Service Worker (disable on Amplify unless sw.js exists)
     if ("serviceWorker" in navigator && "PushManager" in window) {
       navigator.serviceWorker
         .register("/sw.js")
@@ -27,7 +26,6 @@ function App() {
         .catch((err) => console.error("❌ SW registration failed:", err));
     }
 
-    // Subscribe user to push notifications
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
@@ -62,17 +60,35 @@ function App() {
     return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
   }
 
+  // ---------------- Toggle Privacy ----------------
+  const togglePrivacy = () => {
+    setCurrentUser((prev) => ({
+      ...prev,
+      isPrivate: !prev.isPrivate,
+    }));
+  };
+
   return (
     <BrowserRouter>
       <Routes>
         {/* Redirect root to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Public Home (when no user logged in) */}
+        {/* Home page (public tasks) */}
+        <Route path="/home" element={<Home currentUser={currentUser} />} />
+
+        {/* Dedicated Private Mode page */}
         <Route
-          path="/home"
+          path="/private-mode"
           element={
-            currentUser ? <HomePrivate currentUser={currentUser} /> : <Home />
+            currentUser ? (
+              <HomePrivate
+                currentUser={currentUser}
+                togglePrivacy={togglePrivacy}
+              />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           }
         />
 
@@ -96,16 +112,12 @@ function LoginWrapper({ setCurrentUser }) {
 
   const handleLogin = async (loginData) => {
     try {
-      // Example: real backend call
-      // const response = await axios.post(`${apiBase}/auth/login`, loginData);
-      // setCurrentUser(response.data.user);
-
-      // Mock user
       const loggedUser = {
-        _id: "12345", // add id for task.owner comparison
+        _id: "12345",
         name: "Logged User",
         email: loginData.email,
         joined: new Date().toISOString(),
+        isPrivate: false, // default to public
       };
       setCurrentUser(loggedUser);
       navigate("/home");
@@ -129,16 +141,12 @@ function RegisterWrapper({ setCurrentUser }) {
 
   const handleRegister = async (formData) => {
     try {
-      // Example: real backend call
-      // const response = await axios.post(`${apiBase}/auth/register`, formData);
-      // setCurrentUser(response.data.user);
-
-      // Mock user
       const newUser = {
-        _id: "67890", // add id for task.owner comparison
+        _id: "67890",
         name: formData.name,
         email: formData.email,
         joined: new Date().toISOString(),
+        isPrivate: false,
       };
       setCurrentUser(newUser);
       navigate("/home");
