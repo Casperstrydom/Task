@@ -11,7 +11,7 @@ function PrivateModePage({ currentUser, togglePrivacy }) {
 
     const fetchPrivateTasks = async () => {
       try {
-        const response = await axios.get(`${apiBase}/tasks/public`, {
+        const response = await axios.get(`${apiBase}/tasks/private-mode`, {
           params: { userId: currentUser._id },
         });
         setTasks(response.data);
