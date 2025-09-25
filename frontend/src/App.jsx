@@ -79,7 +79,7 @@ function App() {
 
         {/* Dedicated Private Mode page */}
         <Route
-          path="/privacy"
+          path="/private-mode"
           element={
             currentUser ? (
               <HomePrivate

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1758780678993,
@@ -16,6 +16,10 @@
                 {
                     "date": 1758795403854,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,9 @@\n     if (!currentUser) return;\r\n \r\n     const fetchPrivateTasks = async () => {\r\n       try {\r\n-        const response = await axios.get(`${apiBase}/tasks/private`, {\r\n+        const response = await axios.get(`${apiBase}/tasks/public`, {\r\n           params: { userId: currentUser._id },\r\n         });\r\n         setTasks(response.data);\r\n       } catch (err) {\r\n"
+                },
+                {
+                    "date": 1758800551047,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,9 @@\n     if (!currentUser) return;\r\n \r\n     const fetchPrivateTasks = async () => {\r\n       try {\r\n-        const response = await axios.get(`${apiBase}/tasks/public`, {\r\n+        const response = await axios.get(`${apiBase}/tasks/private-mode`, {\r\n           params: { userId: currentUser._id },\r\n         });\r\n         setTasks(response.data);\r\n       } catch (err) {\r\n"
                 }
             ],
             "date": 1758780678993,
