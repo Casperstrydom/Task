@@ -162,9 +162,12 @@ function HomeComponent() {
       })
       .catch(handleTokenError);
   };
-  const filteredTasks = currentUser.isPrivate
-    ? tasks.filter((task) => task.owner === currentUser._id)
-    : tasks;
+  // Only show tasks that belong to current user or their friends
+  const filteredTasks = tasks.filter(
+    (task) =>
+      task.owner === currentUser._id || // always show my own tasks
+      friends.some((friend) => friend._id === task.owner) // or my friends' tasks
+  );
 
   // ---------------- DATE/TIME PICKER FUNCTIONS ----------------
   const openDateTimePicker = () => {
