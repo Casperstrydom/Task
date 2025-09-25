@@ -33,6 +33,28 @@ router.get("/user/me", auth, async (req, res) => {
   }
 });
 
+// PUT /user/privacy → toggle profile privacy
+router.put("/user/privacy", auth, async (req, res) => {
+  try {
+    const { isPrivate } = req.body;
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { isPrivate },
+      { new: true, select: "name email isPrivate createdAt" } // return updated doc
+    );
+
+    if (!updatedUser) return res.status(404).json({ error: "User not found" });
+
+    res.json({
+      message: `Profile is now ${isPrivate ? "private" : "public"}`,
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error("Update privacy error:", err);
+    res.status(500).json({ error: "Failed to update privacy" });
+  }
+});
+
 // ---------------- FRIEND SYSTEM ----------------
 
 // GET /friends → list of my friends

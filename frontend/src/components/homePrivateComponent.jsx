@@ -5,7 +5,7 @@ import { format } from "date-fns";
 
 const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
-function HomeComponent() {
+function HomePrivateComponent() {
   // ---------------- STATE ----------------
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
@@ -19,7 +19,7 @@ function HomeComponent() {
     name: "",
     email: "",
     joined: "",
-    isPrivate: false, // New privacy setting
+    isPrivate: false,
   });
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
@@ -32,7 +32,7 @@ function HomeComponent() {
   const [editTaskTitle, setEditTaskTitle] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
   const [editDueTime, setEditDueTime] = useState("12:00");
-  const [timeTracking, setTimeTracking] = useState({}); // { taskId: { startTime: Date, elapsed: number } }
+  const [timeTracking, setTimeTracking] = useState({});
 
   // ---------------- AUDIO ----------------
   const bellAudio = useRef(new Audio("/bell.mp3"));
@@ -215,7 +215,6 @@ function HomeComponent() {
       .delete(`${apiBase}/tasks/${id}`, headers)
       .then(() => {
         setTasks((prev) => prev.filter((t) => t._id !== id));
-        // Stop time tracking if this task was being tracked
         if (timeTracking[id]) {
           setTimeTracking((prev) => {
             const newTracking = { ...prev };
@@ -678,21 +677,43 @@ function HomeComponent() {
                   </div>
                 </div>
 
-                {/* PRIVACY TOGGLE IN PROFILE */}
+                {/* UPDATED PRIVACY TOGGLE WITH SLIDER */}
                 <div className="privacy-section">
                   <h4>PRIVACY SETTINGS</h4>
                   <div className="privacy-toggle">
-                    <span>Private Mode:</span>
+                    <span className="toggle-label">Profile Visibility:</span>
 
-                    {/* Modern toggle switch */}
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={currentUser.isPrivate}
-                        onChange={togglePrivacy}
-                      />
-                      <span className="slider"></span>
-                    </label>
+                    {/* Cyber styled slider toggle */}
+                    <div className="cyber-slider-container">
+                      <div
+                        className={`cyber-slider ${
+                          currentUser.isPrivate ? "private" : "public"
+                        }`}
+                        onClick={togglePrivacy}
+                      >
+                        <div className="slider-track">
+                          <div className="slider-thumb"></div>
+                        </div>
+
+                        {/* Labels inside toggle */}
+                        <div className="slider-labels">
+                          <span
+                            className={`label-public ${
+                              !currentUser.isPrivate ? "active" : ""
+                            }`}
+                          >
+                            🔓 PUBLIC
+                          </span>
+                          <span
+                            className={`label-private ${
+                              currentUser.isPrivate ? "active" : ""
+                            }`}
+                          >
+                            🔒 PRIVATE
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Status text */}
                     <span
@@ -700,11 +721,13 @@ function HomeComponent() {
                         currentUser.isPrivate ? "private" : "public"
                       }`}
                     >
-                      {currentUser.isPrivate ? "PRIVATE" : "PUBLIC"}
+                      {currentUser.isPrivate
+                        ? "PRIVATE MODE ACTIVE"
+                        : "PUBLIC MODE ACTIVE"}
                     </span>
                   </div>
 
-                  {/* Description text */}
+                  {/* Description */}
                   <p className="privacy-description">
                     {currentUser.isPrivate
                       ? "Your tasks are hidden from friends"
@@ -774,19 +797,21 @@ function HomeComponent() {
                   <h3 className="cyber-subtitle">
                     FRIENDS ({validFriends.length})
                   </h3>
-                  {/* PRIVACY TOGGLE QUICK ACCESS */}
+                  {/* UPDATED QUICK PRIVACY TOGGLE */}
                   <div className="privacy-toggle-quick">
-                    <label className="switch small">
-                      <input
-                        type="checkbox"
-                        checked={currentUser.isPrivate}
-                        onChange={togglePrivacy}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                    <span className="privacy-label">
-                      {currentUser.isPrivate ? "🔒 Private" : "🔓 Public"}
-                    </span>
+                    <div
+                      className={`cyber-slider-quick ${
+                        currentUser.isPrivate ? "private" : "public"
+                      }`}
+                      onClick={togglePrivacy}
+                    >
+                      <div className="slider-track-quick">
+                        <div className="slider-thumb-quick"></div>
+                      </div>
+                      <span className="privacy-label">
+                        {currentUser.isPrivate ? "🔒 Private" : "🔓 Public"}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div className="scroll-container">
@@ -985,4 +1010,4 @@ function HomeComponent() {
   );
 }
 
-export default HomeComponent;
+export default HomePrivateComponent;

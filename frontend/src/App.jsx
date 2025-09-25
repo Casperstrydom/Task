@@ -7,7 +7,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 import axios from "axios";
+
 import Home from "./main/Home.jsx";
+import HomePrivate from "./main/HomePrivate.jsx";
 import Login from "./main/Login.jsx";
 import Register from "./main/Register.jsx";
 
@@ -25,7 +27,7 @@ function App() {
         .catch((err) => console.error("❌ SW registration failed:", err));
     }
 
-    // Subscribe user to push notifications if supported
+    // Subscribe user to push notifications
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
@@ -41,7 +43,6 @@ function App() {
           ),
         });
 
-        // Send subscription to backend
         await axios.post(`${apiBase}/subscribe`, subscription);
         console.log("✅ Subscribed for push notifications");
       } catch (err) {
@@ -64,8 +65,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Redirect root to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/home" element={<Home currentUser={currentUser} />} />
+
+        {/* Public Home (when no user logged in) */}
+        <Route
+          path="/home"
+          element={
+            currentUser ? <HomePrivate currentUser={currentUser} /> : <Home />
+          }
+        />
+
+        {/* Login & Register */}
         <Route
           path="/login"
           element={<LoginWrapper setCurrentUser={setCurrentUser} />}
@@ -85,12 +96,13 @@ function LoginWrapper({ setCurrentUser }) {
 
   const handleLogin = async (loginData) => {
     try {
-      // Example real backend call (uncomment when backend is ready)
+      // Example: real backend call
       // const response = await axios.post(`${apiBase}/auth/login`, loginData);
       // setCurrentUser(response.data.user);
 
-      // Temporary mock user
+      // Mock user
       const loggedUser = {
+        _id: "12345", // add id for task.owner comparison
         name: "Logged User",
         email: loginData.email,
         joined: new Date().toISOString(),
@@ -117,12 +129,13 @@ function RegisterWrapper({ setCurrentUser }) {
 
   const handleRegister = async (formData) => {
     try {
-      // Example real backend call (uncomment when backend is ready)
+      // Example: real backend call
       // const response = await axios.post(`${apiBase}/auth/register`, formData);
       // setCurrentUser(response.data.user);
 
-      // Temporary mock user
+      // Mock user
       const newUser = {
+        _id: "67890", // add id for task.owner comparison
         name: formData.name,
         email: formData.email,
         joined: new Date().toISOString(),

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "frontend/src/main/HomePrivate.jsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1758780678993,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1758780678993,
+            "name": "Commit-0",
+            "content": "import React from \"react\";\r\nimport HomePrivateComponent from \"../components/homePrivateComponent\";\r\n\r\nfunction HomePrivate() {\r\n  return (\r\n    <div>\r\n      <HomePrivateComponent />\r\n    </div>\r\n  );\r\n}\r\n\r\nexport default HomePrivate;\r\n"
+        }
+    ]
+}
