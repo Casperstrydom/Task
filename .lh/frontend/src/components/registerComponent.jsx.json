@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 8,
+            "activePatchIndex": 16,
             "patches": [
                 {
                     "date": 1757419365361,
@@ -40,6 +40,38 @@
                 {
                     "date": 1758542430023,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,28 +1,63 @@\n import { useState } from \"react\";\r\n+import axios from \"axios\";\r\n import \"../main/index.css\";\r\n \r\n-const RegisterComponent = ({ onRegister, switchToLogin }) => {\r\n+const apiBase = import.meta.env.VITE_API_BASE || \"http://localhost:5000\";\r\n+\r\n+const RegisterComponent = ({ switchToLogin }) => {\r\n   const [formData, setFormData] = useState({\r\n     name: \"\",\r\n     email: \"\",\r\n     password: \"\",\r\n     confirmPassword: \"\",\r\n   });\r\n \r\n+  const [loading, setLoading] = useState(false);\r\n+\r\n   const handleChange = (e) => {\r\n     const { name, value } = e.target;\r\n     setFormData((prev) => ({ ...prev, [name]: value }));\r\n   };\r\n \r\n-  const handleSubmit = (e) => {\r\n+  const handleSubmit = async (e) => {\r\n     e.preventDefault();\r\n+\r\n     if (formData.password !== formData.confirmPassword) {\r\n       alert(\"Passwords don't match!\");\r\n       return;\r\n     }\r\n-    // Call parent onRegister with form data\r\n-    onRegister(formData);\r\n+\r\n+    setLoading(true);\r\n+    try {\r\n+      const res = await axios.post(\r\n+        `${apiBase}/auth/register`,\r\n+        {\r\n+          name: formData.name,\r\n+          email: formData.email,\r\n+          password: formData.password,\r\n+        },\r\n+        {\r\n+          headers: { \"Content-Type\": \"application/json\" },\r\n+        }\r\n+      );\r\n+\r\n+      if (res.status === 201) {\r\n+        // If your backend sends a token\r\n+        if (res.data.token) localStorage.setItem(\"token\", res.data.token);\r\n+\r\n+        // Redirect to /home\r\n+        window.location.href = \"/home\"; // Or use navigate(\"/home\") if using React Router\r\n+      }\r\n+    } catch (err) {\r\n+      console.error(\"❌ Registration failed:\", err);\r\n+      alert(\r\n+        err.response?.data?.message ||\r\n+          \"Registration failed. Please try again later.\"\r\n+      );\r\n+    } finally {\r\n+      setLoading(false);\r\n+    }\r\n   };\r\n \r\n   return (\r\n     <div className=\"futuristic-auth-container\">\r\n@@ -108,11 +143,14 @@\n \r\n             <button\r\n               type=\"submit\"\r\n               className=\"cyber-button cyber-button-primary full-width\"\r\n+              disabled={loading}\r\n             >\r\n               <span className=\"cyber-button-glitch\">⊕</span>\r\n-              <span className=\"cyber-button-text\">CREATE IDENTITY</span>\r\n+              <span className=\"cyber-button-text\">\r\n+                {loading ? \"CREATING...\" : \"CREATE IDENTITY\"}\r\n+              </span>\r\n             </button>\r\n \r\n             <div className=\"auth-switch\">\r\n               <span>EXISTING USER?</span>\r\n"
+                },
+                {
+                    "date": 1758797119888,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -112,9 +112,9 @@\n                 required\r\n               />\r\n             </div>\r\n \r\n-            <label className=\"cyber-checkbox-container\">\r\n+            <label className=\"cyber-checkbox-container2\">\r\n               <input type=\"checkbox\" required />\r\n               <span className=\"checkmark\"></span>I ACCEPT THE TERMS OF SERVICE\r\n             </label>\r\n \r\n"
+                },
+                {
+                    "date": 1758797318257,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -114,9 +114,9 @@\n             </div>\r\n \r\n             <label className=\"cyber-checkbox-container2\">\r\n               <input type=\"checkbox\" required />\r\n-              <span className=\"checkmark\"></span>I ACCEPT THE TERMS OF SERVICE\r\n+              <span className=\"checkmark2\"></span>I ACCEPT THE TERMS OF SERVICE\r\n             </label>\r\n \r\n             <button\r\n               type=\"submit\"\r\n"
+                },
+                {
+                    "date": 1758797340507,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -114,9 +114,9 @@\n             </div>\r\n \r\n             <label className=\"cyber-checkbox-container2\">\r\n               <input type=\"checkbox\" required />\r\n-              <span className=\"checkmark2\"></span>I ACCEPT THE TERMS OF SERVICE\r\n+              <span className=\"checkmark2\"></span>I ACCEPT\r\n             </label>\r\n \r\n             <button\r\n               type=\"submit\"\r\n"
+                },
+                {
+                    "date": 1758797356824,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -112,11 +112,11 @@\n                 required\r\n               />\r\n             </div>\r\n \r\n-            <label className=\"cyber-checkbox-container2\">\r\n+            <label className=\"cyber-checkbox-container\">\r\n               <input type=\"checkbox\" required />\r\n-              <span className=\"checkmark2\"></span>I ACCEPT\r\n+              <span className=\"checkmark\"></span>I ACCEPT THE TERMS OF SERVICE\r\n             </label>\r\n \r\n             <button\r\n               type=\"submit\"\r\n"
+                },
+                {
+                    "date": 1758797364978,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -114,9 +114,9 @@\n             </div>\r\n \r\n             <label className=\"cyber-checkbox-container\">\r\n               <input type=\"checkbox\" required />\r\n-              <span className=\"checkmark\"></span>I ACCEPT THE TERMS OF SERVICE\r\n+              <span className=\"checkmark\"></span>I ACCEPT\r\n             </label>\r\n \r\n             <button\r\n               type=\"submit\"\r\n"
+                },
+                {
+                    "date": 1758797609260,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -114,9 +114,9 @@\n             </div>\r\n \r\n             <label className=\"cyber-checkbox-container\">\r\n               <input type=\"checkbox\" required />\r\n-              <span className=\"checkmark\"></span>I ACCEPT\r\n+              <span className=\"checkmark\"></span>confirmation\r\n             </label>\r\n \r\n             <button\r\n               type=\"submit\"\r\n"
+                },
+                {
+                    "date": 1758797618360,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -114,9 +114,9 @@\n             </div>\r\n \r\n             <label className=\"cyber-checkbox-container\">\r\n               <input type=\"checkbox\" required />\r\n-              <span className=\"checkmark\"></span>confirmation\r\n+              <span className=\"checkmark\"></span>Confirmation\r\n             </label>\r\n \r\n             <button\r\n               type=\"submit\"\r\n"
+                },
+                {
+                    "date": 1758797807443,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -114,9 +114,9 @@\n             </div>\r\n \r\n             <label className=\"cyber-checkbox-container\">\r\n               <input type=\"checkbox\" required />\r\n-              <span className=\"checkmark\"></span>Confirmation\r\n+              <span className=\"checkmark\"></span>I ACCEPT THE TERMS OF SERVICE\r\n             </label>\r\n \r\n             <button\r\n               type=\"submit\"\r\n"
                 }
             ],
             "date": 1757419365361,
