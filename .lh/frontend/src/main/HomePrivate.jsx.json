@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1758780678993,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758791647251,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,77 @@\n-import React from \"react\";\r\n-import HomePrivateComponent from \"../components/homePrivateComponent\";\r\n+import React, { useEffect, useState } from \"react\";\r\n+import axios from \"axios\";\r\n \r\n-function HomePrivate() {\r\n+const apiBase = import.meta.env.VITE_API_BASE || \"http://localhost:5000\";\r\n+\r\n+function PrivateModePage({ currentUser, togglePrivacy }) {\r\n+  const [tasks, setTasks] = useState([]);\r\n+\r\n+  useEffect(() => {\r\n+    if (!currentUser) return;\r\n+\r\n+    const fetchPrivateTasks = async () => {\r\n+      try {\r\n+        const response = await axios.get(`${apiBase}/tasks/private`, {\r\n+          params: { userId: currentUser._id },\r\n+        });\r\n+        setTasks(response.data);\r\n+      } catch (err) {\r\n+        console.error(\"❌ Failed to fetch private tasks:\", err);\r\n+      }\r\n+    };\r\n+\r\n+    fetchPrivateTasks();\r\n+  }, [currentUser]);\r\n+\r\n+  if (!currentUser) return <p>Loading...</p>;\r\n+\r\n   return (\r\n-    <div>\r\n-      <HomePrivateComponent />\r\n+    <div className=\"private-mode-container\">\r\n+      <h1>Private Mode</h1>\r\n+\r\n+      <div className=\"privacy-section\">\r\n+        <h4>PRIVACY SETTINGS</h4>\r\n+        <div className=\"privacy-toggle\">\r\n+          <span>Private Mode:</span>\r\n+          <label className=\"toggle-switch\">\r\n+            <input\r\n+              type=\"checkbox\"\r\n+              checked={currentUser.isPrivate}\r\n+              onChange={togglePrivacy}\r\n+            />\r\n+            <span className=\"toggle-slider\"></span>\r\n+          </label>\r\n+          <span\r\n+            className={`privacy-status ${\r\n+              currentUser.isPrivate ? \"private\" : \"public\"\r\n+            }`}\r\n+          >\r\n+            {currentUser.isPrivate ? \"PRIVATE\" : \"PUBLIC\"}\r\n+          </span>\r\n+        </div>\r\n+        <p className=\"privacy-description\">\r\n+          {currentUser.isPrivate\r\n+            ? \"Your tasks are hidden from friends\"\r\n+            : \"Friends can see your tasks\"}\r\n+        </p>\r\n+      </div>\r\n+\r\n+      <div className=\"private-tasks\">\r\n+        <h2>Your Private Tasks</h2>\r\n+        {tasks.length === 0 ? (\r\n+          <p>No private tasks available</p>\r\n+        ) : (\r\n+          <ul className=\"task-list\">\r\n+            {tasks.map((task) => (\r\n+              <li key={task._id}>\r\n+                <strong>{task.title}</strong> - {task.description}\r\n+              </li>\r\n+            ))}\r\n+          </ul>\r\n+        )}\r\n+      </div>\r\n     </div>\r\n   );\r\n }\r\n \r\n-export default HomePrivate;\r\n+export default PrivateModePage;\r\n"
                 }
             ],
             "date": 1758780678993,

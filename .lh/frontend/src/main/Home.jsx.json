@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 9,
             "patches": [
                 {
                     "date": 1757405730475,
@@ -36,6 +36,14 @@
                 {
                     "date": 1757418203031,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,7 @@\n-import { useState, useEffect} from \"react\";\r\n+import React from \"react\";\r\n import HomeComponent from \"../components/homeComponent\";\r\n \r\n-//fetch data from backend and display it here\r\n-useEffect(() => {\r\n-  fetch(\"http://localhost:3000/api/data\")\r\n-    .then((response) => response.json())\r\n-\r\n export default function Home() {\r\n   return (\r\n     <div>\r\n       <HomeComponent />\r\n"
+                },
+                {
+                    "date": 1758791668135,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,11 +1,40 @@\n-import React from \"react\";\r\n-import HomeComponent from \"../components/homeComponent\";\r\n+import React, { useEffect, useState } from \"react\";\r\n+import axios from \"axios\";\r\n \r\n-function Home() {\r\n+const apiBase = import.meta.env.VITE_API_BASE || \"http://localhost:5000\";\r\n+\r\n+function Home({ currentUser }) {\r\n+  const [tasks, setTasks] = useState([]);\r\n+\r\n+  useEffect(() => {\r\n+    // Fetch only public tasks\r\n+    const fetchTasks = async () => {\r\n+      try {\r\n+        const response = await axios.get(`${apiBase}/tasks/public`);\r\n+        setTasks(response.data);\r\n+      } catch (err) {\r\n+        console.error(\"❌ Failed to fetch tasks:\", err);\r\n+      }\r\n+    };\r\n+\r\n+    fetchTasks();\r\n+  }, []);\r\n+\r\n   return (\r\n-    <div>\r\n-      <HomeComponent />\r\n+    <div className=\"home-container\">\r\n+      <h1>Public Tasks</h1>\r\n+      {tasks.length === 0 ? (\r\n+        <p>No public tasks available</p>\r\n+      ) : (\r\n+        <ul className=\"task-list\">\r\n+          {tasks.map((task) => (\r\n+            <li key={task._id}>\r\n+              <strong>{task.title}</strong> - {task.description}\r\n+            </li>\r\n+          ))}\r\n+        </ul>\r\n+      )}\r\n     </div>\r\n   );\r\n }\r\n \r\n"
+                },
+                {
+                    "date": 1758791756924,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n import axios from \"axios\";\r\n \r\n const apiBase = import.meta.env.VITE_API_BASE || \"http://localhost:5000\";\r\n \r\n-function Home({ currentUser }) {\r\n+function Home() {\r\n   const [tasks, setTasks] = useState([]);\r\n \r\n   useEffect(() => {\r\n     // Fetch only public tasks\r\n"
                 }
             ],
             "date": 1757405730475,
